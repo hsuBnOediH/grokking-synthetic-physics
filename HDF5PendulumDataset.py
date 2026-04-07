@@ -51,6 +51,7 @@ class HDF5PendulumDataset(Dataset):
         cam_pos_t_next = torch.tensor(self.file['cam_pos_t_next'][idx], dtype=torch.float32)
         damping = torch.tensor(self.file['damping'][idx], dtype=torch.float32)
         angle = torch.tensor(self.file['angle'][idx], dtype=torch.float32)
+        angular_velocity = torch.tensor(self.file['angular_velocity'][idx], dtype=torch.float32)
 
         return {
             "S_t": s_t,
@@ -59,7 +60,8 @@ class HDF5PendulumDataset(Dataset):
             "cam_pos_t": cam_pos_t,
             "cam_pos_t_next": cam_pos_t_next,
             "damping": damping,
-            "angle": angle
+            "angle": angle,
+            "angular_velocity": angular_velocity,
         }
 
     def close(self):

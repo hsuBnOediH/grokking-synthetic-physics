@@ -111,7 +111,8 @@ class PendulumDataset(Dataset):
         action_t[0] = (action_t[0] + torch.pi) % (2 * torch.pi) - torch.pi
 
         damping = torch.tensor([row_t['Damping']], dtype=torch.float32)
-        angle = torch.tensor([row_t['InitAngle']], dtype=torch.float32)
+        angle = torch.tensor([row_t['Angle']], dtype=torch.float32)
+        angular_velocity = torch.tensor([row_t['AngularVelocity']], dtype=torch.float32)
 
         return {
             "S_t": image_t,
@@ -120,7 +121,8 @@ class PendulumDataset(Dataset):
             "cam_pos_t": cam_pos_t,
             "cam_pos_t_next": cam_pos_t_next,
             "damping": damping,
-            "angle": angle
+            "angle": angle,
+            "angular_velocity": angular_velocity,
         }
 
 # ==========================================

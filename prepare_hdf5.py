@@ -37,6 +37,7 @@ def convert_to_hdf5(data_dir, output_file):
         cam_pos_t_next_ds = f.create_dataset('cam_pos_t_next', shape=(num_samples, 3), dtype=np.float32)
         damping_ds = f.create_dataset('damping', shape=(num_samples, 1), dtype=np.float32)
         angle_ds = f.create_dataset('angle', shape=(num_samples, 1), dtype=np.float32)
+        angular_velocity_ds = f.create_dataset('angular_velocity', shape=(num_samples, 1), dtype=np.float32)
 
         for out_idx, row_idx in enumerate(tqdm(valid_indices)):
             row_t = df.iloc[row_idx]
@@ -69,7 +70,8 @@ def convert_to_hdf5(data_dir, output_file):
             cam_pos_t_ds[out_idx] = np.array([ctx, cty, ctz], dtype=np.float32)
             cam_pos_t_next_ds[out_idx] = np.array([cnxtx, cnxty, cnxtz], dtype=np.float32)
             damping_ds[out_idx] = np.array([row_t['Damping']], dtype=np.float32)
-            angle_ds[out_idx] = np.array([row_t['InitAngle']], dtype=np.float32)
+            angle_ds[out_idx] = np.array([row_t['Angle']], dtype=np.float32)
+            angular_velocity_ds[out_idx] = np.array([row_t['AngularVelocity']], dtype=np.float32)
             
     print(f"\nConversion complete! Saved to {output_file}")
 
