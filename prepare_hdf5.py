@@ -36,8 +36,12 @@ def convert_to_hdf5(data_dir, output_file):
         cam_pos_t_ds = f.create_dataset('cam_pos_t', shape=(num_samples, 3), dtype=np.float32)
         cam_pos_t_next_ds = f.create_dataset('cam_pos_t_next', shape=(num_samples, 3), dtype=np.float32)
         damping_ds = f.create_dataset('damping', shape=(num_samples, 1), dtype=np.float32)
+        gravity_ds = f.create_dataset('gravity', shape=(num_samples, 1), dtype=np.float32)
+        length_ds = f.create_dataset('length', shape=(num_samples, 1), dtype=np.float32)
+        init_angular_velocity_ds = f.create_dataset('init_angular_velocity', shape=(num_samples, 1), dtype=np.float32)
         angle_ds = f.create_dataset('angle', shape=(num_samples, 1), dtype=np.float32)
         angular_velocity_ds = f.create_dataset('angular_velocity', shape=(num_samples, 1), dtype=np.float32)
+        episode_ds = f.create_dataset('episode', shape=(num_samples,), dtype=np.int32)
 
         for out_idx, row_idx in enumerate(tqdm(valid_indices)):
             row_t = df.iloc[row_idx]
@@ -55,14 +59,14 @@ def convert_to_hdf5(data_dir, output_file):
             # 2. Camera Ego-Motion
             ctx, cty, ctz = row_t['Camera_X'], row_t['Camera_Y'], row_t['Camera_Z']
             cnxtx, cnxty, cnxtz = row_t_next['Camera_X'], row_t_next['Camera_Y'], row_t_next['Camera_Z']
-            
+
             theta_t, phi_t = cartesian_to_spherical(ctx, cty, ctz)
             theta_next, phi_next = cartesian_to_spherical(cnxtx, cnxty, cnxtz)
-            
+
             delta_theta = theta_next - theta_t
             delta_theta = (delta_theta + math.pi) % (2 * math.pi) - math.pi
             delta_phi = phi_next - phi_t
-            
+
             # Store in HDF5
             s_t_ds[out_idx] = img_t
             s_t_next_ds[out_idx] = img_t_next
@@ -70,8 +74,12 @@ def convert_to_hdf5(data_dir, output_file):
             cam_pos_t_ds[out_idx] = np.array([ctx, cty, ctz], dtype=np.float32)
             cam_pos_t_next_ds[out_idx] = np.array([cnxtx, cnxty, cnxtz], dtype=np.float32)
             damping_ds[out_idx] = np.array([row_t['Damping']], dtype=np.float32)
+            gravity_ds[out_idx] = np.array([row_t['Gravity']], dtype=np.float32)
+            length_ds[out_idx] = np.array([row_t['Length']], dtype=np.float32)
+            init_angular_velocity_ds[out_idx] = np.array([row_t['InitAngularVelocity']], dtype=np.float32)
             angle_ds[out_idx] = np.array([row_t['Angle']], dtype=np.float32)
             angular_velocity_ds[out_idx] = np.array([row_t['AngularVelocity']], dtype=np.float32)
+            episode_ds[out_idx] = int(row_t['Episode'])
             
     print(f"\nConversion complete! Saved to {output_file}")
 

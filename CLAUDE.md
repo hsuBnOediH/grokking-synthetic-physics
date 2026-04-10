@@ -15,12 +15,13 @@ The core mechanism: varying `latent_dim` (the bottleneck size) to control compre
 No build system. Run Python scripts directly. Dependencies: PyTorch, torchvision, h5py, einops, pandas, Pillow, tqdm.
 
 ```bash
+python design_episodes.py --output episode_design.csv     # Generate Unity episode plan (run once)
 python models.py                                          # Smoke-test ViT MAE forward pass
 python models_conv.py                                     # Smoke-test ConvNet forward pass
 python train.py --model conv --latent_dim 128 --epochs 50 # Train ConvNet baseline
 python train.py --model vit --latent_dim 10 --epochs 200  # Train ViT MAE
-python HDF5PendulumDataset.py --h5-path pendulum_data.h5  # Validate HDF5 dataset
-python prepare_hdf5.py --data-dir /path/to/GeneratedData --output pendulum_data.h5  # Convert raw → HDF5
+python HDF5PendulumDataset.py --h5-path pendulum_data_v3.h5 --design-csv episode_design.csv  # Validate splits
+python prepare_hdf5.py --data-dir GeneratedDataV3 --output pendulum_data_v3.h5               # Convert raw → HDF5
 ```
 
 All Python modules have `if __name__ == "__main__"` test blocks.
@@ -55,66 +56,144 @@ Evidence is gathered via: reconstruction loss curves, pairwise latent distance a
 
 ---
 
-## Experiment Progress (updated 2026-04-08)
-
-### Server
+## Server
 - SSH: `ssh -i ~/.ssh/lab_server fl21@kangaroo.luddy.indiana.edu`
 - Project dir: `/data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics/`
 
-### Data
-**Raw (local):** `Pendulum_Grokking_Env/GeneratedData/`
-- 300 episodes × 100 frames = 30,000 PNGs (`ep{N}_frame{M}.png`) + `ground_truth.csv`
-- 1 unique damping per episode (range 0.011–0.495) — the key experimental variable
-- Angle: 0–360°; Camera: X/Y/Z Cartesian (converted to spherical delta for action in prepare_hdf5.py)
-- ~29,400 valid transitions (consecutive frames within same episode)
+---
 
-**Preprocessed (server):**
-- `pendulum_data.h5` — 7.8MB (245 samples, old local pipeline test only, ignore)
-- `pendulum_data_v2.h5` — 699MB (**use this**; preprocessed from all 300 episodes above, ~29,400 transitions)
+## Experiment Design v3 (updated 2026-04-10) — CURRENT
 
-### Known Issue: Train/Val Split is Transition-Level (not Episode-Level)
-Current `train.py` uses `random_split` on transitions (80/20). Since consecutive frames share
-images (frame N+1 of episode X appears as both `S_t_next` in one sample and `S_t` in the next),
-**val frames may have been seen during training**. This underestimates true generalization error.
+v1 (single damping, 300 episodes): pipeline validation only.
+v2 (5D, 3000 episodes, uniform sampling + post-hoc split): **abandoned** — Latin-hypercube holdout with 5 dims yields only (2/3)^5 ≈ 13% IID episodes (320 train), Far-OOD nearly empty (8 episodes). Split imbalance makes evaluation unreliable.
 
-**TODO**: Implement episode-level split — hold out 20% of episodes (e.g. 60 episodes) entirely,
-so no frames from val episodes appear in training at all.
+v3 fix: **pre-design episodes by band combination**. `design_episodes.py` enumerates all 3^5=243 band combos, assigns episode counts per OOD level, outputs `episode_design.csv`. Unity reads this CSV and samples each episode's params within the assigned sub-range. IID/Near/Far counts are exact by construction.
 
-### Completed
-| Phase | Run | Epochs | train_loss | val_loss | Notes |
-|-------|-----|--------|------------|----------|-------|
-| Phase 0 | pipeline_test (local) | 50 | 0.001202 | 0.001197 | Pipeline validated ✅ |
-| Phase 1 | dim_128 (server) | 300 | 0.000194 | 0.001045 | Memorization baseline ✅ train << val confirms memorization |
+### 5 Physical Dimensions
 
-### In Progress: Phase 2 — Compression Sweep (launched 2026-04-08)
-6 runs in parallel, each on a dedicated GPU (CUDA_VISIBLE_DEVICES=0–5), 300 epochs each:
-```bash
-PYTHON=~/miniconda3/envs/grokking/bin/python
-PROJ=/data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
-cd $PROJ
-gpu=0
-for dim in 64 32 16 8 4 2; do
-  CUDA_VISIBLE_DEVICES=$gpu nohup $PYTHON train.py \
-    --model conv --latent_dim $dim \
-    --h5_path pendulum_data_v2.h5 \
-    --save_dir runs/dim_${dim} \
-    --epochs 300 \
-    > runs/dim_${dim}_train.log 2>&1 &
-  gpu=$((gpu+1))
-done
-```
+| Dim | Parameter | Unity Variable | Range | Single-frame observable? | Encoding |
+|-----|-----------|---------------|-------|-------------------------|----------|
+| D1 | **Pendulum length** | `rod.localScale.y` + bob position | [0.5, 2.0] | YES — geometry | Natural visual |
+| D2 | **Initial angle** | `pendulumSystem.rotation.x` | [15, 85]° | YES — geometry | Natural visual |
+| D3 | **Gravity** | `Physics.gravity.y` | [4.0, 14.0] m/s² | NO — dynamics only | Bob color Hue |
+| D4 | **Damping** | `pendulumRb.angularDamping` | [0.01, 0.5] | NO — dynamics only | Bob color Saturation |
+| D5 | **Initial angular velocity** | `pendulumRb.angularVelocity.x` | [-3.0, 3.0] rad/s | NO — invisible from single frame | **Not encoded — purely latent** |
 
-**Progress snapshot (epoch ~21-24):**
-| dim | epoch | train_loss | val_loss | gap | Observation |
-|-----|-------|-----------|---------|-----|-------------|
-| 64  | 23 | 0.000597 | 0.001151 | +0.000554 | Large gap → memorizing |
-| 32  | 23 | 0.000629 | 0.001008 | +0.000379 | |
-| 16  | 23 | 0.000726 | 0.001314 | +0.000588 | |
-| 8   | 21 | 0.000814 | 0.001235 | +0.000421 | |
-| 4   | 24 | 0.000860 | 0.001467 | +0.000607 | |
-| 2   | 21 | 0.001101 | 0.001180 | +0.000079 | Tiny gap → forced generalization ✅ |
+Three tiers of information accessibility (itself an interesting finding):
+- **Tier A (geometric)**: length, angle — directly readable from pixel geometry
+- **Tier B (color-coded)**: gravity, damping — model must learn color → physics mapping
+- **Tier C (purely latent)**: initial angular velocity — only inferable from temporal dynamics
 
-After all runs complete → Phase 3: `analyze.py` (linear probe, pairwise distance, t-SNE)
+Color encoding: `HSV(hue=gravity_normalized, saturation=lerp(0.3,1.0,damping_normalized), value=1.0)`
+
+Note: mass was excluded because Unity's `angularDamping` acts directly on angular velocity (not torque), so mass may cancel out entirely in the equation of motion. Initial angular velocity is used instead — it is unambiguously dynamically relevant and single-frame-invisible.
+
+### Train/Test Split — Stratified Band Partition
+
+Each dimension normalized to [0, 1], divided into 3 bands: Low [0, 0.33], Mid [0.33, 0.67], High [0.67, 1.0].
+Latin-hypercube rotation of holdout bands:
+
+| Dimension | Train bands | Holdout band |
+|-----------|------------|-------------|
+| D1 Length | Low + High | **Mid** |
+| D2 Angle | Low + Mid | **High** |
+| D3 Gravity | Mid + High | **Low** |
+| D4 Damping | Low + High | **Mid** |
+| D5 Ang. Velocity | Low + Mid | **High** |
+
+**OOD score** = Σ d_i(p_i), where d_i = 0 if in training band, else min-distance to nearest training band boundary.
+Test sets: **IID** (score=0), **Near-OOD** (score ∈ (0, 0.5]), **Far-OOD** (score > 0.5).
+Second axis: **k = number of OOD dimensions** (0-5).
+
+Prediction:
+- Memorization models: fail at k≥1
+- CBR/similarity models: OK at small k + small distance, fail otherwise
+- Rule models: OK everywhere
+
+### Data — V3 Structured Episode Design
+
+`design_episodes.py` output (`episode_design.csv`): one row per episode, columns = `episode_id, combo_id, n_ood_dims, split, {param}_lo, {param}_hi` for all 5 params.
+
+| k (n_ood_dims) | Split label | Band combos | eps/combo | Total episodes |
+|---|---|---|---|---|
+| 0 | iid | 32 | 100 | 3200 |
+| 1 | near_ood | 80 | 10 | 800 |
+| 2 | near_ood | 80 | 10 | 800 |
+| 3 | far_ood | 40 | 15 | 600 |
+| 4 | far_ood | 10 | 30 | 300 |
+| 5 | far_ood | 1 | 300 | 300 |
+| **Total** | | 243 | | **6000** |
+
+- Train/IID-val: 80/20 random split within the 3200 IID episodes → ~2560 train / ~640 val
+- Near-OOD evaluation: 1600 episodes (k=1,2)
+- Far-OOD evaluation: 1200 episodes (k=3,4,5)
+- Total frames: 600K → HDF5 ~14 GB
+- Unity generation time: ~5-6 hours
+
+### Bottleneck Sweep
+
+True information dimensions: current angle (1) + angular velocity (1) + gravity (1) + damping (1) + length (1) + camera pose (2) = **7 continuous quantities** → critical transition at latent_dim ≈ 8.
+
+Sweep: `latent_dim = [2, 4, 8, 16, 32, 64, 128]`
+
+| dim | info ratio (dim/7) | Expected behavior |
+|-----|--------------------|-------------------|
+| 2 | 0.29 | Severe bottleneck, large error but strong generalization |
+| 4 | 0.57 | Must prioritize which physics to encode |
+| **8** | **1.14** | **Critical point** — sufficient if model discovers correct factorization |
+| 16+ | 2.3+ | Increasing memorization |
+
+### Models
+
+| Model | Type | Dynamics? | Priority |
+|-------|------|----------|----------|
+| **ConvNet AE** | Learned, spatial bias (conv) | Yes (dynamics MLP) | P0 |
+| **ViT MAE** | Learned, global attention | Yes (dynamics MLP) | P1 |
+| **PCA baseline** | Linear learned | Yes (dynamics MLP on top) | P1 |
+| **JPEG baseline** | Hand-crafted DCT | Yes (dynamics MLP on top) | P2 stretch |
+
+JPEG/PCA: compress S_t → z_compressed, train same dynamics MLP architecture, decode back. Isolates compression mechanism effect.
+
+### Evaluation Metrics & Key Plots
+
+**Core metrics:**
+- M1: Reconstruction MSE (per IID / Near-OOD / Far-OOD)
+- M2: Generalization Gap Ratio = (MSE_OOD - MSE_IID) / MSE_IID — **the key metric**
+- M3: Linear Probe R² (z_t → each ground-truth dimension)
+- M4: Latent disentanglement (correlation matrix z dims vs GT dims)
+- M5: OOD performance by number of OOD dimensions k
+
+**6 key plots:**
+1. Money Plot: latent_dim vs Generalization Gap Ratio (ConvNet/ViT/PCA lines)
+2. IID vs OOD Error: latent_dim vs MSE, solid=IID dashed=OOD
+3. Linear Probe Heatmap: rows=GT dims, cols=latent_dim, color=R²
+4. OOD by k: x=k, y=MSE, one curve per latent_dim
+5. t-SNE/UMAP of latent space at dim ∈ {2,8,32,128}, colored by GT dims
+6. Reconstruction montage: rows=latent_dim, cols=IID/Near-OOD/Far-OOD examples
+
+### Known Confounds
+1. **Model capacity vs bottleneck**: changing latent_dim also changes total params → report param counts
+2. **Color encoding leaks physics**: gravity/damping readable from single frame → control experiment with fixed white bob
+3. **Camera pose uses latent capacity**: may mask physics compression → include camera in linear probes
+
+### Fallback
+If 5D too sparse: fall back to 3D (length, gravity, damping). If time runs out: keep 1D damping setup + proper episode-level OOD split.
+
+---
+
+### v1 Reference Results (single-dimension damping, 2026-04-08)
+
+These results validated the pipeline and gave initial signal for the compression spectrum. Not used in final report.
+
+| dim | train_loss | val_loss | val/train | z_std |
+|-----|-----------|---------|-----------|-------|
+| 128 | 0.000194 | 0.001045 | 5.4x | 1.21 |
+| 64 | 0.000143 | 0.000546 | 3.8x | 1.62 |
+| 32 | 0.000190 | 0.000564 | 3.0x | 2.15 |
+| 16 | 0.000237 | 0.000763 | 3.2x | 3.25 |
+| 8 | 0.000331 | 0.000738 | 2.2x | 3.77 |
+| 4 | 0.000468 | 0.001070 | 2.3x | 5.34 |
+| 2 | 0.000636 | 0.000777 | 1.2x | 6.32 |
 
 ---
 
@@ -124,6 +203,66 @@ After all runs complete → Phase 3: `analyze.py` (linear probe, pairwise distan
 | `models_conv.py` | ConvNet encoder-decoder (primary model) |
 | `models.py` | ViT MAE encoder-decoder (comparison model) |
 | `train.py` | Training script: `--model {conv,vit}`, `--latent_dim`, logging, checkpointing |
-| `HDF5PendulumDataset.py` | Fast HDF5 dataset loader |
-| `PendulumDataset.py` | Raw PNG+CSV dataset loader |
-| `prepare_hdf5.py` | One-time raw → HDF5 conversion |
+| `design_episodes.py` | **V3** — enumerate 243 band combos, output `episode_design.csv` for Unity |
+| `HDF5PendulumDataset.py` | Fast HDF5 loader; `make_splits()` builds 4 DataLoaders from design CSV |
+| `prepare_hdf5.py` | One-time raw → HDF5 conversion (all 5D fields + episode ID) |
+| `DataGenerator.cs` | Unity V3 — reads `episode_design.csv`, minimal Inspector, samples within sub-ranges |
+| `PendulumDataset.py` | Raw PNG+CSV loader (legacy, not used in main pipeline) |
+| `split_dataset.py` | V2 leftover — superseded by `design_episodes.py`, keep for reference |
+
+---
+
+## Implementation Status (as of 2026-04-10)
+
+### DONE ✅
+- `DataGenerator.cs` — V3 rewrite: reads `episode_design.csv`, samples within sub-ranges, minimal Inspector (5 scene refs + file path + framesPerEpisode)
+- `design_episodes.py` — enumerates 243 band combos, assigns episodes per k-level, outputs `episode_design.csv`
+- `prepare_hdf5.py` — supports all 5D fields (gravity, length, init_angular_velocity, episode)
+- `HDF5PendulumDataset.py` — V3: filters by episode_design.csv split labels; `make_splits()` builds 4 DataLoaders
+
+### TODO (next session) 📋
+
+**Step 1 — Generate episode_design.csv and trigger Unity**:
+```bash
+# Generate the design file (run once)
+python design_episodes.py --output episode_design.csv
+# → 6000 episodes: 3200 IID / 1600 near_ood / 1200 far_ood
+
+# Copy to Unity project root (where DataGenerator reads it)
+cp episode_design.csv /path/to/UnityProject/
+```
+In Unity Inspector: set `episodeDesignFile = "episode_design.csv"`, `saveDirectory = "GeneratedDataV3"`. Hit Play.
+
+**Step 2 — Post-generation validation** (after Unity finishes):
+```bash
+# Validate raw CSV
+python3 -c "
+import pandas as pd
+df = pd.read_csv('GeneratedDataV3/ground_truth.csv')
+print('Episodes:', df.Episode.nunique(), '  Frames:', len(df))
+print(df.groupby('Episode').first()[['Damping','Gravity','Length','InitAngularVelocity','Angle']].describe())
+"
+
+# Convert to HDF5
+python prepare_hdf5.py --data-dir GeneratedDataV3 --output pendulum_data_v3.h5
+
+# Validate splits (should match episode_design.csv counts)
+python HDF5PendulumDataset.py --h5-path pendulum_data_v3.h5 --design-csv episode_design.csv
+```
+
+**Step 3 — Update train.py** to use `make_splits()`:
+```python
+from HDF5PendulumDataset import make_splits
+loaders = make_splits("pendulum_data_v3.h5", "episode_design.csv")
+# loaders: {"train", "iid_val", "near_ood", "far_ood"}
+```
+Log all 4 split losses per epoch.
+
+**Step 4 — Transfer to server and run sweep**:
+```bash
+scp pendulum_data_v3.h5 fl21@kangaroo.luddy.indiana.edu:/data/fl21/CS552_SP26_FinalProject/
+scp episode_design.csv  fl21@kangaroo.luddy.indiana.edu:/data/fl21/CS552_SP26_FinalProject/
+```
+- 7 latent_dims × ConvNet = 7 runs (parallel on 6 GPUs)
+- Then ViT 7 runs
+- Then PCA baseline
