@@ -14,6 +14,13 @@ The core mechanism: varying `latent_dim` (the bottleneck size) to control compre
 
 No build system. Run Python scripts directly. Dependencies: PyTorch, torchvision, h5py, einops, pandas, Pillow, tqdm.
 
+**Conda environment**: `grokking-synthetic-physics` (`/opt/miniconda3/envs/grokking-synthetic-physics`)
+Always activate before running any script:
+```bash
+conda activate grokking-synthetic-physics
+# or: conda run -n grokking-synthetic-physics python <script>
+```
+
 ```bash
 python design_episodes.py --output episode_design.csv     # Generate Unity episode plan (run once)
 python models.py                                          # Smoke-test ViT MAE forward pass

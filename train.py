@@ -3,11 +3,9 @@ import csv
 import os
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
 from torchvision.utils import save_image
 
-from HDF5PendulumDataset import HDF5PendulumDataset
+from HDF5PendulumDataset import make_splits
 from models_conv import ConvBottleneckAE
 from models import ContinuousBottleneckMAE
 
@@ -90,11 +88,11 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=200)
-    parser.add_argument("--h5_path", default="pendulum_data.h5")
+    parser.add_argument("--h5_path", default="pendulum_data_v3.h5")
+    parser.add_argument("--design_csv", default="episode_design.csv")
     parser.add_argument("--save_dir", default="runs/default")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--save_every", type=int, default=50, help="Save checkpoint every N epochs")
-    parser.add_argument("--num_workers", type=int, default=0)
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -106,18 +104,13 @@ def main():
     print(f"Device: {device}")
 
     # Dataset
-    dataset = HDF5PendulumDataset(h5_path=args.h5_path)
-    n_total = len(dataset)
-    n_val = max(1, int(0.2 * n_total))
-    n_train = n_total - n_val
-    train_set, val_set = random_split(dataset, [n_train, n_val],
-                                       generator=torch.Generator().manual_seed(args.seed))
-    print(f"Dataset: {n_total} total, {n_train} train, {n_val} val")
-
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True,
-                              num_workers=args.num_workers)
-    val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False,
-                            num_workers=args.num_workers)
+    loaders = make_splits(args.h5_path, args.design_csv, seed=args.seed)
+    train_loader   = loaders["train"]
+    val_loader     = loaders["iid_val"]
+    near_ood_loader = loaders["near_ood"]
+    far_ood_loader  = loaders["far_ood"]
+    print(f"Splits: train={len(train_loader.dataset)} iid_val={len(val_loader.dataset)} "
+          f"near_ood={len(near_ood_loader.dataset)} far_ood={len(far_ood_loader.dataset)}")
 
     # Model
     model = build_model(args, device)
@@ -132,27 +125,31 @@ def main():
     log_path = os.path.join(args.save_dir, "log.csv")
     log_file = open(log_path, "w", newline="")
     log_writer = csv.writer(log_file)
-    log_writer.writerow(["epoch", "train_loss", "val_loss", "z_mean", "z_std", "lr"])
+    log_writer.writerow(["epoch", "train_loss", "iid_val_loss", "near_ood_loss", "far_ood_loss", "z_mean", "z_std", "lr"])
 
     print(f"\nTraining for {args.epochs} epochs...")
     print("-" * 60)
 
     for epoch in range(1, args.epochs + 1):
         train_loss, train_z = train_one_epoch(model, train_loader, optimizer, criterion, device)
-        val_loss, val_z, last_pred, last_target = evaluate(model, val_loader, criterion, device)
+        iid_val_loss,  _,  last_pred, last_target = evaluate(model, val_loader,      criterion, device)
+        near_ood_loss, _, _, _                    = evaluate(model, near_ood_loader, criterion, device)
+        far_ood_loss,  _, _, _                    = evaluate(model, far_ood_loader,  criterion, device)
         scheduler.step()
 
         z_mean = train_z.mean().item()
         z_std = train_z.std().item()
         lr = optimizer.param_groups[0]["lr"]
 
-        log_writer.writerow([epoch, f"{train_loss:.6f}", f"{val_loss:.6f}",
+        log_writer.writerow([epoch, f"{train_loss:.6f}", f"{iid_val_loss:.6f}",
+                             f"{near_ood_loss:.6f}", f"{far_ood_loss:.6f}",
                              f"{z_mean:.4f}", f"{z_std:.4f}", f"{lr:.6f}"])
         log_file.flush()
 
         if epoch % 10 == 0 or epoch == 1:
-            print(f"Epoch {epoch:4d} | train_loss={train_loss:.6f} | val_loss={val_loss:.6f} | "
-                  f"z_mean={z_mean:.4f} | z_std={z_std:.4f} | lr={lr:.6f}")
+            print(f"Epoch {epoch:4d} | train={train_loss:.6f} | iid_val={iid_val_loss:.6f} | "
+                  f"near_ood={near_ood_loss:.6f} | far_ood={far_ood_loss:.6f} | "
+                  f"z_std={z_std:.4f} | lr={lr:.6f}")
 
         # Save reconstruction images
         if epoch % args.save_every == 0 or epoch == 1:
@@ -166,7 +163,7 @@ def main():
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "train_loss": train_loss,
-                "val_loss": val_loss,
+                "iid_val_loss": iid_val_loss,
                 "args": vars(args),
             }, ckpt_path)
 
