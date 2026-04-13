@@ -1,9 +1,12 @@
 import argparse
 import csv
 import os
+import sys
+import time
 import torch
 import torch.nn as nn
 from torchvision.utils import save_image
+from tqdm import tqdm
 
 from HDF5PendulumDataset import make_splits
 from models_conv import ConvBottleneckAE
@@ -28,13 +31,15 @@ def save_reconstructions(pred, target, path, n=8):
     save_image(comparison, path, nrow=n, padding=2)
 
 
-def train_one_epoch(model, loader, optimizer, criterion, device):
+def train_one_epoch(model, loader, optimizer, criterion, device, epoch):
     model.train()
     total_loss = 0.0
     n_batches = 0
     all_z = []
 
-    for batch in loader:
+    pbar = tqdm(loader, desc=f"Train ep{epoch}", file=sys.stdout,
+                mininterval=30, dynamic_ncols=False, leave=False)
+    for batch in pbar:
         s_t = batch["S_t"].to(device)
         s_t_next = batch["S_t_next"].to(device)
         action = batch["action"].to(device)
@@ -49,13 +54,14 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         total_loss += loss.item()
         n_batches += 1
         all_z.append(z_t.detach())
+        pbar.set_postfix(loss=f"{total_loss/n_batches:.5f}")
 
     all_z = torch.cat(all_z, dim=0)
     return total_loss / n_batches, all_z
 
 
 @torch.no_grad()
-def evaluate(model, loader, criterion, device):
+def evaluate(model, loader, criterion, device, split_name="eval"):
     model.eval()
     total_loss = 0.0
     n_batches = 0
@@ -63,7 +69,9 @@ def evaluate(model, loader, criterion, device):
     last_pred = None
     last_target = None
 
-    for batch in loader:
+    pbar = tqdm(loader, desc=f"Eval {split_name}", file=sys.stdout,
+                mininterval=30, dynamic_ncols=False, leave=False)
+    for batch in pbar:
         s_t = batch["S_t"].to(device)
         s_t_next = batch["S_t_next"].to(device)
         action = batch["action"].to(device)
@@ -101,7 +109,12 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else
                           "mps" if torch.backends.mps.is_available() else "cpu")
-    print(f"Device: {device}")
+    if device.type == "cuda":
+        gpu_name = torch.cuda.get_device_name(0)
+        gpu_mem  = torch.cuda.get_device_properties(0).total_memory // (1024**3)
+        print(f"Device: {device} ({gpu_name}, {gpu_mem}GB)", flush=True)
+    else:
+        print(f"Device: {device}", flush=True)
 
     # Dataset
     loaders = make_splits(args.h5_path, args.design_csv, seed=args.seed)
@@ -131,10 +144,12 @@ def main():
     print("-" * 60)
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_z = train_one_epoch(model, train_loader, optimizer, criterion, device)
-        iid_val_loss,  _,  last_pred, last_target = evaluate(model, val_loader,      criterion, device)
-        near_ood_loss, _, _, _                    = evaluate(model, near_ood_loader, criterion, device)
-        far_ood_loss,  _, _, _                    = evaluate(model, far_ood_loader,  criterion, device)
+        t0 = time.time()
+        train_loss, train_z = train_one_epoch(model, train_loader, optimizer, criterion, device, epoch)
+        iid_val_loss,  _,  last_pred, last_target = evaluate(model, val_loader,      criterion, device, "iid_val")
+        near_ood_loss, _, _, _                    = evaluate(model, near_ood_loader, criterion, device, "near_ood")
+        far_ood_loss,  _, _, _                    = evaluate(model, far_ood_loader,  criterion, device, "far_ood")
+        epoch_time = time.time() - t0
         scheduler.step()
 
         z_mean = train_z.mean().item()
@@ -149,7 +164,7 @@ def main():
         if epoch % 10 == 0 or epoch == 1:
             print(f"Epoch {epoch:4d} | train={train_loss:.6f} | iid_val={iid_val_loss:.6f} | "
                   f"near_ood={near_ood_loss:.6f} | far_ood={far_ood_loss:.6f} | "
-                  f"z_std={z_std:.4f} | lr={lr:.6f}")
+                  f"z_std={z_std:.4f} | lr={lr:.6f} | {epoch_time:.1f}s", flush=True)
 
         # Save reconstruction images
         if epoch % args.save_every == 0 or epoch == 1:
