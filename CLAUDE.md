@@ -231,38 +231,57 @@ These results validated the pipeline and gave initial signal for the compression
 - `HDF5PendulumDataset.py` — preload=True (sequential read + numpy filter); num_workers=0
 - `train.py` — uses `make_splits()`, logs all 4 split losses + epoch timing per epoch
 - Data on server: `pendulum_data_v3.h5` + `episode_design.csv`
+- **ConvNet sweep COMPLETE** — 7 runs × 200 epochs, GPUs 0-6, finished ~12:30 PM EDT
 
-### RUNNING NOW 🚀 (started 2026-04-13 ~10:50 AM EDT)
+### ConvNet Sweep Results (epoch 200) 📊
 
-**ConvNet sweep** — 7 runs in parallel, GPUs 0-6:
-```
-dim=2   → GPU 0 → logs/conv_dim2.log   → runs/conv_dim2/
-dim=4   → GPU 1 → logs/conv_dim4.log   → runs/conv_dim4/
-dim=8   → GPU 2 → logs/conv_dim8.log   → runs/conv_dim8/
-dim=16  → GPU 3 → logs/conv_dim16.log  → runs/conv_dim16/
-dim=32  → GPU 4 → logs/conv_dim32.log  → runs/conv_dim32/
-dim=64  → GPU 5 → logs/conv_dim64.log  → runs/conv_dim64/
-dim=128 → GPU 6 → logs/conv_dim128.log → runs/conv_dim128/
-```
-- Epoch timing: ~92s/epoch × 200 epochs = **~5.1 hours**
-- Expected completion: **~4:00 PM EDT 2026-04-13**
-- Epoch 1 loss sanity check: train ~0.002, iid_val ~0.001, near/far_ood similar ✅
+| dim | train | iid_val | near_ood | far_ood | GGR* | z_std |
+|-----|-------|---------|---------|---------|------|-------|
+| 2   | 0.000585 | 0.000609 | 0.000617 | 0.000619 | 1.6% | 14.69 |
+| 4   | 0.000356 | 0.000371 | 0.000375 | 0.000383 | 3.2% | 4.31 |
+| 8   | 0.000274 | 0.000296 | 0.000304 | 0.000318 | 7.4% | 4.21 |
+| 16  | 0.000235 | 0.000272 | 0.000285 | 0.000301 | 10.7% | 2.81 |
+| 32  | 0.000196 | 0.000247 | 0.000269 | 0.000294 | 19.0% | 1.54 |
+| 64  | 0.000156 | 0.000229 | 0.000256 | 0.000287 | 25.3% | 0.61 |
+| 128 | 0.000146 | 0.000222 | 0.000250 | 0.000281 | 26.6% | 0.43 |
 
-**Check progress:**
-```bash
-ssh -i ~/.ssh/lab_server fl21@kangaroo.luddy.indiana.edu
-cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
-# See latest epoch for each run:
-for dim in 2 4 8 16 32 64 128; do
-  echo -n "dim$dim: "; strings logs/conv_dim${dim}.log | grep -E '^Epoch\s+[0-9]' | tail -1
-done
-# Quick CSV check (line count = epochs done + 1):
-wc -l runs/conv_dim*/log.csv
-```
+*GGR = (far_ood - iid_val) / iid_val — the "money metric"
+
+**Key observations:**
+- ✅ GGR increases monotonically with dim → compression spectrum signal is present
+- ✅ z_std decreases with dim → large dim models underutilize capacity (only ~10 effective dims even at 128)
+- ⚠️ Small dim has high absolute loss everywhere — is this "true generalization" or "uniform failure"?
+- ⚠️ dim=2 z_std=14.69 still very high at epoch 200 → representation not fully stabilized, likely needs more steps
+
+**Open question — Small dim needs more training (grokking hypothesis):**
+dim=2/4 may not have converged. Evidence: z_std still very high, loss still elevated.
+CosineAnnealingLR with T_max=200 drives lr→0 before small-dim models find their compressed representation.
+This is the core grokking phenomenon: small-capacity models solving structured problems show delayed generalization.
 
 ### TODO NEXT 📋
 
-**Step 1 — After ConvNet finishes (~4 PM), launch ViT sweep:**
+**Step 1 — Grokking experiment: run dim=2 and dim=4 for 1000 epochs on GPU 7 (currently free):**
+```bash
+source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking
+cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+
+# dim=2, 1000 epochs
+CUDA_VISIBLE_DEVICES=7 nohup python train.py \
+  --model conv --latent_dim 2 --epochs 1000 \
+  --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
+  --save_dir runs/conv_dim2_long \
+  > logs/conv_dim2_long.log 2>&1 &
+
+# dim=4, 1000 epochs (start after dim=2 finishes, or use a second available GPU)
+CUDA_VISIBLE_DEVICES=7 nohup python train.py \
+  --model conv --latent_dim 4 --epochs 1000 \
+  --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
+  --save_dir runs/conv_dim4_long \
+  > logs/conv_dim4_long.log 2>&1 &
+```
+Watch for: loss continuing to drop after ep200, sudden grokking transition, z_std stabilizing.
+
+**Step 2 — ViT sweep (GPUs 0-6, after launching grokking experiment):**
 ```bash
 source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking
 cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
@@ -278,14 +297,24 @@ for i in 0 1 2 3 4 5 6; do
 done
 ```
 
-**Step 2 — After ViT, run PCA baseline (P1)**
+**Step 3 — Linear Probe (M3) — critical to distinguish "true generalization" vs "uniform failure":**
+For each trained model, freeze encoder, train a linear layer: z_t → [gravity, damping, length, angle, init_angular_velocity, cam_azimuth, cam_elevation].
+If dim=2 z_t predicts GT dims well → true rule extraction. If not → uniform failure.
+Need to write `probe.py` (not yet exists).
 
-**Step 3 — Analysis & plots** (after all training):
-- M1: Reconstruction MSE per split
-- M2: Generalization Gap Ratio = (MSE_OOD - MSE_IID) / MSE_IID
-- M3: Linear Probe R² (z_t → each GT dimension)
-- 6 key plots (see Experiment Design section above)
-```
-- 7 latent_dims × ConvNet = 7 runs (parallel on 6 GPUs)
-- Then ViT 7 runs
-- Then PCA baseline
+**Step 4 — Analysis & plots** (after all training + probes):
+- M1: Reconstruction MSE (IID / Near-OOD / Far-OOD) — already in log.csv
+- M2: GGR = (MSE_OOD - MSE_IID) / MSE_IID — already computed above
+- M3: Linear Probe R² heatmap (rows=GT dims, cols=latent_dim)
+- M4: OOD by k (x=n_ood_dims, y=MSE, one curve per latent_dim)
+- M5: t-SNE/UMAP at dim ∈ {2, 8, 32, 128}, colored by GT dims
+- M6: Reconstruction montage (rows=latent_dim, cols=IID/Near/Far examples)
+
+**Check progress command:**
+```bash
+ssh -i ~/.ssh/lab_server fl21@kangaroo.luddy.indiana.edu
+cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+for dim in 2 4 8 16 32 64 128; do
+  echo -n "dim$dim: "; strings logs/conv_dim${dim}.log | grep -E '^Epoch\s+[0-9]' | tail -1
+done
+wc -l runs/conv_dim*/log.csv
