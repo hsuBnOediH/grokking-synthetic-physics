@@ -53,25 +53,22 @@ class HDF5PendulumDataset(Dataset):
                 ep_arr = f['episode'][:]  # shape (N,)
                 self.indices = np.where(np.isin(ep_arr, list(allowed_episodes)))[0].astype(np.int64)
 
-            # Preload selected samples into RAM
+            # Preload selected samples into RAM.
+            # Strategy: read each field fully (fast sequential I/O), then
+            # filter with numpy indexing (fast). Avoids slow h5py fancy indexing.
             self.data = None
             if preload:
                 idx = self.indices
-                print(f"  Preloading {len(idx)} samples into RAM...", flush=True)
-                self.data = {
-                    'S_t':                   f['S_t'][idx],
-                    'S_t_next':              f['S_t_next'][idx],
-                    'action':                f['action'][idx],
-                    'cam_pos_t':             f['cam_pos_t'][idx],
-                    'cam_pos_t_next':        f['cam_pos_t_next'][idx],
-                    'damping':               f['damping'][idx],
-                    'gravity':               f['gravity'][idx],
-                    'length':                f['length'][idx],
-                    'init_angular_velocity': f['init_angular_velocity'][idx],
-                    'angle':                 f['angle'][idx],
-                    'angular_velocity':      f['angular_velocity'][idx],
-                    'episode':               f['episode'][idx],
-                }
+                print(f"  Preloading {len(idx)} samples into RAM "
+                      f"(sequential read + filter)...", flush=True)
+                self.data = {}
+                for key in ['S_t', 'S_t_next', 'action', 'cam_pos_t',
+                            'cam_pos_t_next', 'damping', 'gravity', 'length',
+                            'init_angular_velocity', 'angle', 'angular_velocity',
+                            'episode']:
+                    full = f[key][:]            # sequential full read (fast)
+                    self.data[key] = full[idx].copy()  # filter, own the memory
+                    del full                    # free immediately
                 print(f"  Done preloading.", flush=True)
 
         if transform is None:
