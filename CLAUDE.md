@@ -66,6 +66,9 @@ Evidence is gathered via: reconstruction loss curves, pairwise latent distance a
 ## Server
 - SSH: `ssh -i ~/.ssh/lab_server fl21@kangaroo.luddy.indiana.edu`
 - Project dir: `/data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics/`
+- **Conda env**: `grokking` (`/home/fl21/miniconda3/envs/grokking`) — PyTorch 2.6, CUDA 12.4, 8× A10 (24GB)
+- Activate: `source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking`
+- Sweep logs: `logs/conv_dim{N}.log`, checkpoints: `runs/conv_dim{N}/`
 
 ---
 
