@@ -222,56 +222,69 @@ These results validated the pipeline and gave initial signal for the compression
 
 ---
 
-## Implementation Status (as of 2026-04-10)
+## Implementation Status (as of 2026-04-13)
 
 ### DONE ✅
-- `DataGenerator.cs` — V3 rewrite: reads `episode_design.csv`, samples within sub-ranges, minimal Inspector (5 scene refs + file path + framesPerEpisode)
-- `design_episodes.py` — enumerates 243 band combos, assigns episodes per k-level, outputs `episode_design.csv`
-- `prepare_hdf5.py` — supports all 5D fields (gravity, length, init_angular_velocity, episode)
-- `HDF5PendulumDataset.py` — V3: filters by episode_design.csv split labels; `make_splits()` builds 4 DataLoaders
+- `DataGenerator.cs` — V3 rewrite: reads `episode_design.csv`, samples within sub-ranges
+- `design_episodes.py` — enumerates 243 band combos, outputs `episode_design.csv`
+- `prepare_hdf5.py` — supports all 5D fields; HDF5 generated (14 GB on server)
+- `HDF5PendulumDataset.py` — preload=True (sequential read + numpy filter); num_workers=0
+- `train.py` — uses `make_splits()`, logs all 4 split losses + epoch timing per epoch
+- Data on server: `pendulum_data_v3.h5` + `episode_design.csv`
 
-### TODO (next session) 📋
+### RUNNING NOW 🚀 (started 2026-04-13 ~10:50 AM EDT)
 
-**Step 1 — Generate episode_design.csv and trigger Unity**:
-```bash
-# Generate the design file (run once)
-python design_episodes.py --output episode_design.csv
-# → 6000 episodes: 3200 IID / 1600 near_ood / 1200 far_ood
-
-# Copy to Unity project root (where DataGenerator reads it)
-cp episode_design.csv /path/to/UnityProject/
+**ConvNet sweep** — 7 runs in parallel, GPUs 0-6:
 ```
-In Unity Inspector: set `episodeDesignFile = "episode_design.csv"`, `saveDirectory = "GeneratedDataV3"`. Hit Play.
+dim=2   → GPU 0 → logs/conv_dim2.log   → runs/conv_dim2/
+dim=4   → GPU 1 → logs/conv_dim4.log   → runs/conv_dim4/
+dim=8   → GPU 2 → logs/conv_dim8.log   → runs/conv_dim8/
+dim=16  → GPU 3 → logs/conv_dim16.log  → runs/conv_dim16/
+dim=32  → GPU 4 → logs/conv_dim32.log  → runs/conv_dim32/
+dim=64  → GPU 5 → logs/conv_dim64.log  → runs/conv_dim64/
+dim=128 → GPU 6 → logs/conv_dim128.log → runs/conv_dim128/
+```
+- Epoch timing: ~92s/epoch × 200 epochs = **~5.1 hours**
+- Expected completion: **~4:00 PM EDT 2026-04-13**
+- Epoch 1 loss sanity check: train ~0.002, iid_val ~0.001, near/far_ood similar ✅
 
-**Step 2 — Post-generation validation** (after Unity finishes):
+**Check progress:**
 ```bash
-# Validate raw CSV
-python3 -c "
-import pandas as pd
-df = pd.read_csv('GeneratedDataV3/ground_truth.csv')
-print('Episodes:', df.Episode.nunique(), '  Frames:', len(df))
-print(df.groupby('Episode').first()[['Damping','Gravity','Length','InitAngularVelocity','Angle']].describe())
-"
-
-# Convert to HDF5
-python prepare_hdf5.py --data-dir GeneratedDataV3 --output pendulum_data_v3.h5
-
-# Validate splits (should match episode_design.csv counts)
-python HDF5PendulumDataset.py --h5-path pendulum_data_v3.h5 --design-csv episode_design.csv
+ssh -i ~/.ssh/lab_server fl21@kangaroo.luddy.indiana.edu
+cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+# See latest epoch for each run:
+for dim in 2 4 8 16 32 64 128; do
+  echo -n "dim$dim: "; strings logs/conv_dim${dim}.log | grep -E '^Epoch\s+[0-9]' | tail -1
+done
+# Quick CSV check (line count = epochs done + 1):
+wc -l runs/conv_dim*/log.csv
 ```
 
-**Step 3 — Update train.py** to use `make_splits()`:
-```python
-from HDF5PendulumDataset import make_splits
-loaders = make_splits("pendulum_data_v3.h5", "episode_design.csv")
-# loaders: {"train", "iid_val", "near_ood", "far_ood"}
-```
-Log all 4 split losses per epoch.
+### TODO NEXT 📋
 
-**Step 4 — Transfer to server and run sweep**:
+**Step 1 — After ConvNet finishes (~4 PM), launch ViT sweep:**
 ```bash
-scp pendulum_data_v3.h5 fl21@kangaroo.luddy.indiana.edu:/data/fl21/CS552_SP26_FinalProject/
-scp episode_design.csv  fl21@kangaroo.luddy.indiana.edu:/data/fl21/CS552_SP26_FinalProject/
+source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking
+cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+dims=(2 4 8 16 32 64 128)
+for i in 0 1 2 3 4 5 6; do
+  dim=${dims[$i]}
+  CUDA_VISIBLE_DEVICES=$i nohup python train.py \
+    --model vit --latent_dim $dim --epochs 200 \
+    --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
+    --save_dir runs/vit_dim${dim} \
+    > logs/vit_dim${dim}.log 2>&1 &
+  echo "Launched vit dim=${dim} on GPU $i (PID $!)"
+done
+```
+
+**Step 2 — After ViT, run PCA baseline (P1)**
+
+**Step 3 — Analysis & plots** (after all training):
+- M1: Reconstruction MSE per split
+- M2: Generalization Gap Ratio = (MSE_OOD - MSE_IID) / MSE_IID
+- M3: Linear Probe R² (z_t → each GT dimension)
+- 6 key plots (see Experiment Design section above)
 ```
 - 7 latent_dims × ConvNet = 7 runs (parallel on 6 GPUs)
 - Then ViT 7 runs
