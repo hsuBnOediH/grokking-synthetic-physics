@@ -62,14 +62,18 @@ class HDF5PendulumDataset(Dataset):
                 print(f"  Preloading {len(idx)} samples into RAM "
                       f"(sequential read + filter)...", flush=True)
                 self.data = {}
-                for key in ['S_t', 'S_t_next', 'action', 'cam_pos_t',
-                            'cam_pos_t_next', 'damping', 'gravity', 'length',
-                            'init_angular_velocity', 'angle', 'angular_velocity',
-                            'episode']:
+                fields = ['S_t', 'S_t_next', 'action', 'cam_pos_t',
+                          'cam_pos_t_next', 'damping', 'gravity', 'length',
+                          'init_angular_velocity', 'angle', 'angular_velocity',
+                          'episode']
+                for i, key in enumerate(fields, 1):
+                    mb = f[key].nbytes / 1024**2
+                    print(f"  [{i}/{len(fields)}] reading '{key}' ({mb:.0f} MB)...",
+                          flush=True)
                     full = f[key][:]            # sequential full read (fast)
                     self.data[key] = full[idx].copy()  # filter, own the memory
                     del full                    # free immediately
-                print(f"  Done preloading.", flush=True)
+                print(f"  Done preloading {len(idx)} samples.", flush=True)
 
         if transform is None:
             self.transform = transforms.Compose([transforms.ToTensor()])
