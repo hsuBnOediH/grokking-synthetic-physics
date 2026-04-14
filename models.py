@@ -136,8 +136,9 @@ class ContinuousBottleneckMAE(nn.Module):
         # Reshape patches back into [B, 3, 64, 64] image
         p = self.patch_size
         h = w = self.patch_embed.img_size // p
-        pred_s_next = rearrange(pred_patches, 'b (h w) (p1 p2 c) -> b c (h p1) (w p2)', 
+        pred_s_next = rearrange(pred_patches, 'b (h w) (p1 p2 c) -> b c (h p1) (w p2)',
                                 h=h, w=w, p1=p, p2=p, c=3)
+        pred_s_next = torch.sigmoid(pred_s_next)  # constrain to [0,1], consistent with ConvNet
 
         # Return both the prediction and the bottleneck representation
         # Returning Z_t allows you to compute metrics on its topology during training
