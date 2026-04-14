@@ -232,6 +232,7 @@ These results validated the pipeline and gave initial signal for the compression
 - `train.py` — z_std early stopping, `--resume` (crash recovery + extension), rolling checkpoints (`--keep_checkpoints 3`), scheduler state saved
 - `models.py` — ViT decoder output now has `torch.sigmoid()` for [0,1] consistency with ConvNet
 - `launch_vit_after_conv.sh` — auto-launches ViT sweep when ConvNet PIDs all finish
+- `probe.py` — linear probe R² analysis; sweeps all dims, outputs CSV + heatmap PNG
 - Data on server: `pendulum_data_v3.h5` + `episode_design.csv`
 - **ConvNet v1** — 7 runs × 200 epochs (reference, superseded by v2)
 - **ConvNet v2** — z_std-stopped runs; dim=2/4/16/128 complete, dim=8/64 resumed, dim=32 in progress
@@ -260,10 +261,10 @@ GGR = (far_ood − iid_val) / iid_val — the "money metric"
 |-----|------------|-------|---------|---------|---------|-----|-------|--------|
 | 2   | 429  | 0.000537 | 0.000572 | 0.000581 | 0.000589 | 3.0%  | 18.0 | ✅ done |
 | 4   | 583  | 0.000281 | 0.000350 | 0.000364 | 0.000385 | 10.0% | 5.9  | ✅ done |
-| 8   | 200→resumed | — | — | — | — | — | — | 🔄 running (resume, min_ep=500) |
+| 8   | 280 (resume) | 0.000255 | 0.000303 | 0.000316 | 0.000332 | 9.6% | 4.34 | 🔄 running (min_ep=500) |
 | 16  | 252  | 0.000216 | 0.000277 | 0.000293 | 0.000311 | 12.3% | 2.6  | ✅ done |
-| 32  | 660+ | 0.000134 | 0.000249 | 0.000279 | 0.000313 | 25.7% | 1.2  | 🔄 running |
-| 64  | 200→resumed | — | — | — | — | — | — | 🔄 running (resume, min_ep=500) |
+| 32  | 760+ | 0.000130 | 0.000250 | 0.000281 | 0.000315 | 26.0% | 1.17 | 🔄 running |
+| 64  | 280 (resume) | 0.000141 | 0.000243 | 0.000272 | 0.000304 | 25.1% | 0.56 | 🔄 running (min_ep=500) |
 | 128 | 249  | 0.000139 | 0.000235 | 0.000263 | 0.000293 | 24.7% | 0.40 | ✅ done |
 
 **Logs**: `logs/conv_dim{N}_v2.log` | **Checkpoints**: `runs/conv_dim{N}_v2/`
@@ -281,13 +282,37 @@ Auto-launches via `launch_vit_after_conv.sh` (watcher PID 757292) once dim=32, r
 Same sweep: dims=[2,4,8,16,32,64,128], GPUs 0-6, max 2000 epochs, z_std stopping.
 Logs: `logs/vit_dim{N}_v2.log` | Checkpoints: `runs/vit_dim{N}_v2/`
 
+### probe.py Usage
+
+```bash
+# After training completes, run on server:
+cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking
+
+# ConvNet sweep only
+python probe.py --model conv --sweep
+
+# Both conv + vit (after ViT finishes)
+python probe.py --both --sweep
+
+# Single model (for testing)
+python probe.py --model conv --latent_dim 8 \
+    --checkpoint runs/conv_dim8_v2/model_final.pt
+```
+
+Outputs: `probe_results/probe_results.csv` + `probe_results/probe_heatmap_{conv,vit}.png`
+
+Probes 8 GT variables across tiers:
+- **Tier A** (geometric, single-frame visible): `length`, `angle`
+- **Tier B** (color-coded): `gravity`, `damping`
+- **Tier C** (latent/temporal): `angular_velocity`, `init_ang_vel`, `cam_azimuth`, `cam_elevation`
+
+If dim=2 `gravity`/`damping` R² > 0.5 → **true rule extraction** (paper holds)
+If dim=2 R² ≈ 0 everywhere → **uniform failure** (dim=2 low GGR is meaningless)
+
 ### TODO NEXT 📋
 
-**P0 — `probe.py` (write now, run after training completes):**
-Freeze encoder of each saved model. Train a linear layer: `z_t → [gravity, damping, length, angle, init_angular_velocity, cam_azimuth, cam_elevation]`. Report R² per GT dim per latent_dim.
-- If dim=2 R² is high for key physics vars → **true rule extraction** ✅
-- If dim=2 R² ≈ 0 everywhere → **uniform failure** ❌ (GGR low only because model is equally bad)
-This is the most critical missing piece to validate the paper's claim.
+**P0 — Run `probe.py` after ConvNet training completes** (command above)
 
 **P1 — Analysis & plots** (after all training + probes):
 - M1: Reconstruction MSE (IID / Near-OOD / Far-OOD) — already in log.csv
