@@ -222,99 +222,97 @@ These results validated the pipeline and gave initial signal for the compression
 
 ---
 
-## Implementation Status (as of 2026-04-13)
+## Implementation Status (as of 2026-04-14)
 
 ### DONE ✅
 - `DataGenerator.cs` — V3 rewrite: reads `episode_design.csv`, samples within sub-ranges
 - `design_episodes.py` — enumerates 243 band combos, outputs `episode_design.csv`
 - `prepare_hdf5.py` — supports all 5D fields; HDF5 generated (14 GB on server)
 - `HDF5PendulumDataset.py` — preload=True (sequential read + numpy filter); num_workers=0
-- `train.py` — uses `make_splits()`, logs all 4 split losses + epoch timing per epoch
+- `train.py` — z_std early stopping, `--resume` (crash recovery + extension), rolling checkpoints (`--keep_checkpoints 3`), scheduler state saved
+- `models.py` — ViT decoder output now has `torch.sigmoid()` for [0,1] consistency with ConvNet
+- `launch_vit_after_conv.sh` — auto-launches ViT sweep when ConvNet PIDs all finish
 - Data on server: `pendulum_data_v3.h5` + `episode_design.csv`
-- **ConvNet sweep COMPLETE** — 7 runs × 200 epochs, GPUs 0-6, finished ~12:30 PM EDT
+- **ConvNet v1** — 7 runs × 200 epochs (reference, superseded by v2)
+- **ConvNet v2** — z_std-stopped runs; dim=2/4/16/128 complete, dim=8/64 resumed, dim=32 in progress
 
-### ConvNet Sweep Results (epoch 200) 📊
+### train.py Key Arguments (updated)
+```bash
+--epochs 2000          # max epochs; z_std early stop ends sooner
+--resume <ckpt.pt>     # resume from checkpoint (crash recovery or extension)
+--keep_checkpoints 3   # rolling window: keeps last 3 periodic checkpoints
+--min_epochs 200       # earliest epoch z_std stop can trigger
+--zstd_patience 50     # window size for convergence check
+--zstd_threshold 0.01  # relative range threshold (0.01 = 1%)
+--no_early_stop        # disable z_std stopping, run full --epochs
+--save_every 50        # checkpoint interval
+```
 
-| dim | train | iid_val | near_ood | far_ood | GGR* | z_std |
-|-----|-------|---------|---------|---------|------|-------|
-| 2   | 0.000585 | 0.000609 | 0.000617 | 0.000619 | 1.6% | 14.69 |
-| 4   | 0.000356 | 0.000371 | 0.000375 | 0.000383 | 3.2% | 4.31 |
-| 8   | 0.000274 | 0.000296 | 0.000304 | 0.000318 | 7.4% | 4.21 |
-| 16  | 0.000235 | 0.000272 | 0.000285 | 0.000301 | 10.7% | 2.81 |
-| 32  | 0.000196 | 0.000247 | 0.000269 | 0.000294 | 19.0% | 1.54 |
-| 64  | 0.000156 | 0.000229 | 0.000256 | 0.000287 | 25.3% | 0.61 |
-| 128 | 0.000146 | 0.000222 | 0.000250 | 0.000281 | 26.6% | 0.43 |
+Resume modes (auto-detected from --epochs vs checkpoint's original epochs):
+- **Crash recovery**: `--epochs` ≤ original → restores optimizer + scheduler exactly
+- **Extension**: `--epochs` > original → fresh cosine schedule over remaining epochs
 
-*GGR = (far_ood - iid_val) / iid_val — the "money metric"
+### ConvNet v2 Results (z_std-stopped) 📊
 
-**Key observations:**
-- ✅ GGR increases monotonically with dim → compression spectrum signal is present
-- ✅ z_std decreases with dim → large dim models underutilize capacity (only ~10 effective dims even at 128)
-- ⚠️ Small dim has high absolute loss everywhere — is this "true generalization" or "uniform failure"?
-- ⚠️ dim=2 z_std=14.69 still very high at epoch 200 → representation not fully stabilized, likely needs more steps
+GGR = (far_ood − iid_val) / iid_val — the "money metric"
 
-**Open question — Small dim needs more training (grokking hypothesis):**
-dim=2/4 may not have converged. Evidence: z_std still very high, loss still elevated.
-CosineAnnealingLR with T_max=200 drives lr→0 before small-dim models find their compressed representation.
-This is the core grokking phenomenon: small-capacity models solving structured problems show delayed generalization.
+| dim | final epoch | train | iid_val | near_ood | far_ood | GGR | z_std | status |
+|-----|------------|-------|---------|---------|---------|-----|-------|--------|
+| 2   | 429  | 0.000537 | 0.000572 | 0.000581 | 0.000589 | 3.0%  | 18.0 | ✅ done |
+| 4   | 583  | 0.000281 | 0.000350 | 0.000364 | 0.000385 | 10.0% | 5.9  | ✅ done |
+| 8   | 200→resumed | — | — | — | — | — | — | 🔄 running (resume, min_ep=500) |
+| 16  | 252  | 0.000216 | 0.000277 | 0.000293 | 0.000311 | 12.3% | 2.6  | ✅ done |
+| 32  | 660+ | 0.000134 | 0.000249 | 0.000279 | 0.000313 | 25.7% | 1.2  | 🔄 running |
+| 64  | 200→resumed | — | — | — | — | — | — | 🔄 running (resume, min_ep=500) |
+| 128 | 249  | 0.000139 | 0.000235 | 0.000263 | 0.000293 | 24.7% | 0.40 | ✅ done |
+
+**Logs**: `logs/conv_dim{N}_v2.log` | **Checkpoints**: `runs/conv_dim{N}_v2/`
+
+**Key findings so far:**
+- ✅ GGR trend: low dim → low GGR (generalizes), high dim → high GGR (memorizes)
+- ✅ Grokking confirmed: dim=4 went from GGR=3.2% (ep200) → 10.0% (ep583) — delayed generalization is real
+- ⚠️ dim=2 ambiguous: GGR=3.0% but absolute loss highest — could be "true generalization" OR "uniform failure". **Linear probe required to distinguish.**
+- ⚠️ dim=8/64 stopped at min_epochs=200 (too early) → resumed with min_epochs=500, threshold=0.5%
+
+**Why z_std values differ across dims:** expected behavior — a 2-dim latent must pack all variation into 2 numbers (high spread), a 128-dim latent spreads variation across many dims (low per-dim spread). z_std is NOT a comparison metric; it is only a convergence signal for each run's own stability.
+
+### ViT v2 — PENDING ⏳
+Auto-launches via `launch_vit_after_conv.sh` (watcher PID 757292) once dim=32, resumed dim=8, resumed dim=64 all finish.
+Same sweep: dims=[2,4,8,16,32,64,128], GPUs 0-6, max 2000 epochs, z_std stopping.
+Logs: `logs/vit_dim{N}_v2.log` | Checkpoints: `runs/vit_dim{N}_v2/`
 
 ### TODO NEXT 📋
 
-**Step 1 — Grokking experiment: run dim=2 and dim=4 for 1000 epochs on GPU 7 (currently free):**
-```bash
-source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking
-cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+**P0 — `probe.py` (write now, run after training completes):**
+Freeze encoder of each saved model. Train a linear layer: `z_t → [gravity, damping, length, angle, init_angular_velocity, cam_azimuth, cam_elevation]`. Report R² per GT dim per latent_dim.
+- If dim=2 R² is high for key physics vars → **true rule extraction** ✅
+- If dim=2 R² ≈ 0 everywhere → **uniform failure** ❌ (GGR low only because model is equally bad)
+This is the most critical missing piece to validate the paper's claim.
 
-# dim=2, 1000 epochs
-CUDA_VISIBLE_DEVICES=7 nohup python train.py \
-  --model conv --latent_dim 2 --epochs 1000 \
-  --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
-  --save_dir runs/conv_dim2_long \
-  > logs/conv_dim2_long.log 2>&1 &
-
-# dim=4, 1000 epochs (start after dim=2 finishes, or use a second available GPU)
-CUDA_VISIBLE_DEVICES=7 nohup python train.py \
-  --model conv --latent_dim 4 --epochs 1000 \
-  --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
-  --save_dir runs/conv_dim4_long \
-  > logs/conv_dim4_long.log 2>&1 &
-```
-Watch for: loss continuing to drop after ep200, sudden grokking transition, z_std stabilizing.
-
-**Step 2 — ViT sweep (GPUs 0-6, after launching grokking experiment):**
-```bash
-source /home/fl21/miniconda3/etc/profile.d/conda.sh && conda activate grokking
-cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
-dims=(2 4 8 16 32 64 128)
-for i in 0 1 2 3 4 5 6; do
-  dim=${dims[$i]}
-  CUDA_VISIBLE_DEVICES=$i nohup python train.py \
-    --model vit --latent_dim $dim --epochs 200 \
-    --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
-    --save_dir runs/vit_dim${dim} \
-    > logs/vit_dim${dim}.log 2>&1 &
-  echo "Launched vit dim=${dim} on GPU $i (PID $!)"
-done
-```
-
-**Step 3 — Linear Probe (M3) — critical to distinguish "true generalization" vs "uniform failure":**
-For each trained model, freeze encoder, train a linear layer: z_t → [gravity, damping, length, angle, init_angular_velocity, cam_azimuth, cam_elevation].
-If dim=2 z_t predicts GT dims well → true rule extraction. If not → uniform failure.
-Need to write `probe.py` (not yet exists).
-
-**Step 4 — Analysis & plots** (after all training + probes):
+**P1 — Analysis & plots** (after all training + probes):
 - M1: Reconstruction MSE (IID / Near-OOD / Far-OOD) — already in log.csv
-- M2: GGR = (MSE_OOD - MSE_IID) / MSE_IID — already computed above
+- M2: GGR vs latent_dim curve (ConvNet + ViT lines) — the "money plot"
 - M3: Linear Probe R² heatmap (rows=GT dims, cols=latent_dim)
 - M4: OOD by k (x=n_ood_dims, y=MSE, one curve per latent_dim)
 - M5: t-SNE/UMAP at dim ∈ {2, 8, 32, 128}, colored by GT dims
 - M6: Reconstruction montage (rows=latent_dim, cols=IID/Near/Far examples)
 
-**Check progress command:**
+**Check progress:**
 ```bash
 ssh -i ~/.ssh/lab_server fl21@kangaroo.luddy.indiana.edu
 cd /data/fl21/CS552_SP26_FinalProject/grokking-synthetic-physics
+
+# ConvNet v2 progress
 for dim in 2 4 8 16 32 64 128; do
-  echo -n "dim$dim: "; strings logs/conv_dim${dim}.log | grep -E '^Epoch\s+[0-9]' | tail -1
+  echo -n "conv dim${dim}: "
+  strings logs/conv_dim${dim}_v2.log 2>/dev/null | grep -E '^Epoch[[:space:]]+[0-9]' | tail -1
 done
-wc -l runs/conv_dim*/log.csv
+
+# ViT v2 progress (after auto-launch)
+for dim in 2 4 8 16 32 64 128; do
+  echo -n "vit  dim${dim}: "
+  strings logs/vit_dim${dim}_v2.log 2>/dev/null | grep -E '^Epoch[[:space:]]+[0-9]' | tail -1
+done
+
+# Watcher status
+tail -3 logs/vit_launcher.log
