@@ -11,6 +11,7 @@ from tqdm import tqdm
 from HDF5PendulumDataset import make_splits
 from models_conv import ConvBottleneckAE
 from models import ContinuousBottleneckMAE
+from models_dct import DCTBottleneckAE
 
 
 def build_model(args, device):
@@ -18,6 +19,8 @@ def build_model(args, device):
         model = ConvBottleneckAE(latent_dim=args.latent_dim, action_dim=2)
     elif args.model == "vit":
         model = ContinuousBottleneckMAE(latent_dim=args.latent_dim, action_dim=2)
+    elif args.model == "dct":
+        model = DCTBottleneckAE(latent_dim=args.latent_dim, action_dim=2)
     else:
         raise ValueError(f"Unknown model: {args.model}")
     return model.to(device)
@@ -113,7 +116,7 @@ def save_checkpoint(path, epoch, model, optimizer, scheduler, train_loss,
 
 def main():
     parser = argparse.ArgumentParser(description="Train compression spectrum model")
-    parser.add_argument("--model", default="conv", choices=["conv", "vit"])
+    parser.add_argument("--model", default="conv", choices=["conv", "vit", "dct"])
     parser.add_argument("--latent_dim", type=int, default=10)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--batch_size", type=int, default=32)
