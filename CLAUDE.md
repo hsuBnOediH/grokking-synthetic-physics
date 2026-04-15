@@ -332,23 +332,30 @@ Probes 8 GT variables across tiers:
 If dim=2 `gravity`/`damping` R² > 0.5 → **true rule extraction** (paper holds)
 If dim=2 R² ≈ 0 everywhere → **uniform failure** (dim=2 low GGR is meaningless)
 
-### ConvNet probe.py Results (partial, 2026-04-15) 🔄
+### ConvNet probe.py Results ✅ (2026-04-15)
 
-`python probe.py --model conv --sweep` running (PID 782204). Partial results so far:
+`probe_results/probe_results.csv` + `probe_results/probe_heatmap_conv.png`
 
-| dim | gravity | damping | length | angle | ang_vel | init_ang_vel | cam_azimuth | cam_elevation |
-|-----|---------|---------|--------|-------|---------|-------------|------------|--------------|
-| 2   | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.02 | **0.94** |
-| 4   | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.26 | **0.99** |
-| 8   | 0.00 | 0.00 | 0.00 | 0.02 | 0.00 | 0.00 | 0.22 | **1.00** |
-| 16  | 0.01 | 0.02 | 0.04 | 0.06 | 0.00 | 0.00 | 0.45 | **1.00** |
-| 32+ | — | — | — | — | — | — | — | — |
+| dim | gravity | damping | length | angle | ang_vel | cam_azimuth | cam_elevation |
+|-----|---------|---------|--------|-------|---------|------------|--------------|
+| 2   | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.02 | **0.94** |
+| 4   | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.26 | **0.99** |
+| 8   | 0.00 | 0.00 | 0.00 | 0.02 | 0.00 | 0.22 | **1.00** |
+| 16  | 0.01 | 0.02 | 0.04 | 0.06 | 0.00 | 0.45 | **1.00** |
+| 32  | **0.72** | 0.21 | 0.06 | 0.12 | 0.01 | 0.55 | **1.00** |
+| 64  | **0.69** | **0.53** | 0.21 | 0.12 | 0.01 | 0.73 | **1.00** |
+| 128 | **0.71** | **0.43** | 0.26 | 0.33 | 0.01 | 0.76 | **1.00** |
 
-**Key finding:** At ALL dims tested so far, **cam_elevation perfectly dominates the latent space** (R²≈1.0). Physics variables (gravity, damping) near zero at dim≤8. dim=2 low GGR = **uniform failure for physics** — the 2 latent dims are used entirely for camera pose, not physics rules. This changes the paper's dim=2 interpretation.
+**Key findings:**
+- ✅ `cam_elevation` R²≈1.0 at ALL dims — always perfectly encoded (geometrically dominant)
+- ✅ dim ≤ 16: all physics vars R²≈0 — bottleneck fully consumed by camera pose
+- ✅ **dim=32 phase transition**: gravity R² jumps 0.01→0.72 — first dim with spare capacity for physics
+- ✅ `angular_velocity` R²≈0 everywhere — purely temporal, invisible from single frame (as expected)
+- ⚠️ **Paper implication**: critical transition is at dim≈32, not dim=8. Camera pose (especially elevation) consumes far more capacity than anticipated. True physics rule emergence requires ~32 dims.
 
 ### TODO NEXT 📋
 
-**P0 — ~~Run probe.py ConvNet~~ RUNNING** — wait for results + run ViT probe after ViT dim=2/4 finish
+**P0 — ~~Run probe.py ConvNet~~ DONE ✅** — run ViT probe after ViT dim=2/4 finish
 
 **P1 — Analysis & plots** (after all training + probes):
 - M1: Reconstruction MSE (IID / Near-OOD / Far-OOD) — already in log.csv
