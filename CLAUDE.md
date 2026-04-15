@@ -160,9 +160,23 @@ Sweep: `latent_dim = [2, 4, 8, 16, 32, 64, 128]`
 | **ConvNet AE** | Learned, spatial bias (conv) | Yes (dynamics MLP) | P0 |
 | **ViT MAE** | Learned, global attention | Yes (dynamics MLP) | P1 |
 | **PCA baseline** | Linear learned | Yes (dynamics MLP on top) | P1 |
-| **JPEG baseline** | Hand-crafted DCT | Yes (dynamics MLP on top) | P2 stretch |
+| **DCT baseline** | Hand-crafted frequency domain | Yes (dynamics MLP on top) | P2 stretch |
 
 JPEG/PCA: compress S_t → z_compressed, train same dynamics MLP architecture, decode back. Isolates compression mechanism effect.
+
+**DCT baseline design (preferred over raw JPEG):**
+- Use global 2D DCT on full image (not 8×8 block-wise) → take top-K coefficients in zigzag order (low-freq first)
+- K ∈ {2,4,8,16,32,64,128} — directly comparable to ConvNet/ViT latent_dim
+- Encoder/Decoder: **fixed** (no learning) — only dynamics MLP is trained
+- Fully differentiable (DCT = linear transform via `torch.fft`)
+- File to create: `models_dct.py` (~60 lines); `train.py` needs no changes
+
+**Scientific value:** Answers "does compression *mechanism* matter, or just compression *level*?"
+- DCT GGR ≈ ConvNet → frequency structure is natural inductive bias for this physics world
+- DCT GGR >> ConvNet → learned compression beats hand-crafted for physics
+- DCT GGR << ConvNet → DCT frequency decomposition natively aligns with the physics variables
+
+Implementation effort: ~half a day after ViT + presentation are done.
 
 ### Evaluation Metrics & Key Plots
 
@@ -188,6 +202,18 @@ JPEG/PCA: compress S_t → z_compressed, train same dynamics MLP architecture, d
 
 ### Fallback
 If 5D too sparse: fall back to 3D (length, gravity, damping). If time runs out: keep 1D damping setup + proper episode-level OOD split.
+
+### Three-Regime Interpretation (from probe results, 2026-04-15)
+
+The compression spectrum has three empirically distinct regimes:
+
+| Regime | latent_dim | What's encoded | GGR | Interpretation |
+|--------|-----------|---------------|-----|----------------|
+| Visual Shortcut | 2–16 | Camera pose only (elevation R²≈1.0, physics ≈0) | Low (3–12%) | Uniform failure — low GGR is fake, not rule extraction |
+| Phase Transition | ~32 | Camera pose + physics begins (gravity R²: 0.01→0.72) | High (~25%) | First spare capacity for physics, but memorization kicks in simultaneously |
+| Memorization | 64–128 | Camera pose + physics (non-linear, entangled) | High (24–25%) | CBR-like: fits train distribution, fails on OOD |
+
+**Key revision to original hypothesis:** Critical transition is at dim≈32, not dim=8. Camera elevation alone consumes significant bottleneck capacity at all sizes. "Good OOD" at small dim = visual shortcut (ignoring physics), not abstract rule learning.
 
 ---
 
@@ -355,7 +381,12 @@ If dim=2 R² ≈ 0 everywhere → **uniform failure** (dim=2 low GGR is meaningl
 
 ### TODO NEXT 📋
 
-**P0 — ~~Run probe.py ConvNet~~ DONE ✅** — run ViT probe after ViT dim=2/4 finish
+**P0 — ~~Run probe.py ConvNet~~ DONE ✅**
+
+**P0 — Run ViT probe** after ViT dim=2/4 finish (~today evening):
+```bash
+nohup python probe.py --model vit --sweep > logs/probe_vit_v2.log 2>&1 &
+```
 
 **P1 — Analysis & plots** (after all training + probes):
 - M1: Reconstruction MSE (IID / Near-OOD / Far-OOD) — already in log.csv
