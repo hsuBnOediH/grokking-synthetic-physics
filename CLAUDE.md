@@ -222,7 +222,7 @@ These results validated the pipeline and gave initial signal for the compression
 
 ---
 
-## Implementation Status (as of 2026-04-14)
+## Implementation Status (as of 2026-04-15)
 
 ### DONE ✅
 - `DataGenerator.cs` — V3 rewrite: reads `episode_design.csv`, samples within sub-ranges
@@ -235,7 +235,9 @@ These results validated the pipeline and gave initial signal for the compression
 - `probe.py` — linear probe R² analysis; sweeps all dims, outputs CSV + heatmap PNG
 - Data on server: `pendulum_data_v3.h5` + `episode_design.csv`
 - **ConvNet v1** — 7 runs × 200 epochs (reference, superseded by v2)
-- **ConvNet v2** — z_std-stopped runs; dim=2/4/16/128 complete, dim=8/64 resumed, dim=32 in progress
+- **ConvNet v2** — ALL 7 dims complete ✅
+- **ViT v2** — dim=8/16/32/64/128 complete ✅; dim=2/4 still running 🔄
+- **probe.py ConvNet sweep** — running on server (PID 782204) 🔄
 
 ### train.py Key Arguments (updated)
 ```bash
@@ -253,34 +255,54 @@ Resume modes (auto-detected from --epochs vs checkpoint's original epochs):
 - **Crash recovery**: `--epochs` ≤ original → restores optimizer + scheduler exactly
 - **Extension**: `--epochs` > original → fresh cosine schedule over remaining epochs
 
-### ConvNet v2 Results (z_std-stopped) 📊
+### ConvNet v2 Results (z_std-stopped) 📊 ✅ ALL COMPLETE
 
 GGR = (far_ood − iid_val) / iid_val — the "money metric"
 
-| dim | final epoch | train | iid_val | near_ood | far_ood | GGR | z_std | status |
-|-----|------------|-------|---------|---------|---------|-----|-------|--------|
-| 2   | 429  | 0.000537 | 0.000572 | 0.000581 | 0.000589 | 3.0%  | 18.0 | ✅ done |
-| 4   | 583  | 0.000281 | 0.000350 | 0.000364 | 0.000385 | 10.0% | 5.9  | ✅ done |
-| 8   | 280 (resume) | 0.000255 | 0.000303 | 0.000316 | 0.000332 | 9.6% | 4.34 | 🔄 running (min_ep=500) |
-| 16  | 252  | 0.000216 | 0.000277 | 0.000293 | 0.000311 | 12.3% | 2.6  | ✅ done |
-| 32  | 760+ | 0.000130 | 0.000250 | 0.000281 | 0.000315 | 26.0% | 1.17 | 🔄 running |
-| 64  | 280 (resume) | 0.000141 | 0.000243 | 0.000272 | 0.000304 | 25.1% | 0.56 | 🔄 running (min_ep=500) |
-| 128 | 249  | 0.000139 | 0.000235 | 0.000263 | 0.000293 | 24.7% | 0.40 | ✅ done |
+| dim | final epoch | train | iid_val | near_ood | far_ood | GGR | z_std |
+|-----|------------|-------|---------|---------|---------|-----|-------|
+| 2   | 429  | 0.000537 | 0.000576 | 0.000586 | 0.000597 | 3.6%  | 18.05 |
+| 4   | 583  | 0.000281 | 0.000341 | 0.000354 | 0.000374 | 9.7%  | 5.92  |
+| 8   | 610  | 0.000224 | 0.000298 | 0.000313 | 0.000331 | 11.1% | 4.57  |
+| 16  | 252  | 0.000216 | 0.000279 | 0.000295 | 0.000313 | 12.2% | 2.62  |
+| 32  | 919  | 0.000125 | 0.000251 | 0.000282 | 0.000315 | 25.5% | 1.13  |
+| 64  | 500  | 0.000122 | 0.000246 | 0.000276 | 0.000309 | 25.6% | 0.56  |
+| 128 | 249  | 0.000137 | 0.000237 | 0.000265 | 0.000295 | 24.5% | 0.40  |
 
 **Logs**: `logs/conv_dim{N}_v2.log` | **Checkpoints**: `runs/conv_dim{N}_v2/`
 
-**Key findings so far:**
-- ✅ GGR trend: low dim → low GGR (generalizes), high dim → high GGR (memorizes)
-- ✅ Grokking confirmed: dim=4 went from GGR=3.2% (ep200) → 10.0% (ep583) — delayed generalization is real
-- ⚠️ dim=2 ambiguous: GGR=3.0% but absolute loss highest — could be "true generalization" OR "uniform failure". **Linear probe required to distinguish.**
-- ⚠️ dim=8/64 stopped at min_epochs=200 (too early) → resumed with min_epochs=500, threshold=0.5%
+**Key findings:**
+- ✅ GGR trend confirmed: dim ≤ 8 → low GGR (generalizes); dim ≥ 16 → high GGR (memorizes)
+- ✅ Grokking confirmed: dim=4 GGR rose from 3.2% (ep200) → 9.7% (ep583) — delayed generalization
+- ⚠️ dim=2 ambiguous: GGR=3.6% but absolute loss highest — **see probe results below**
+- ✅ Critical transition at dim=8→16 (GGR jump from 11% to 12%, continuous not abrupt — 5D data needs more dims)
 
-**Why z_std values differ across dims:** expected behavior — a 2-dim latent must pack all variation into 2 numbers (high spread), a 128-dim latent spreads variation across many dims (low per-dim spread). z_std is NOT a comparison metric; it is only a convergence signal for each run's own stability.
+### ViT v2 Results 📊 (dim=2/4 still running 🔄)
 
-### ViT v2 — PENDING ⏳
-Auto-launches via `launch_vit_after_conv.sh` (watcher PID 757292) once dim=32, resumed dim=8, resumed dim=64 all finish.
+Launched 2026-04-14 20:02 by watcher after ConvNet finished.
 Same sweep: dims=[2,4,8,16,32,64,128], GPUs 0-6, max 2000 epochs, z_std stopping.
 Logs: `logs/vit_dim{N}_v2.log` | Checkpoints: `runs/vit_dim{N}_v2/`
+
+| dim | final epoch | iid_val | near_ood | far_ood | GGR | z_std | status |
+|-----|------------|---------|---------|---------|-----|-------|--------|
+| 2   | —    | — | — | — | — | — | 🔄 ~ep 276 |
+| 4   | —    | — | — | — | — | — | 🔄 ~ep 291 |
+| 8   | 231  | 0.000361 | 0.000370 | 0.000385 | 6.6%  | 2.52 | ✅ done |
+| 16  | 236  | 0.000333 | 0.000343 | 0.000357 | 7.2%  | 1.56 | ✅ done |
+| 32  | 200  | 0.000322 | 0.000334 | 0.000352 | 9.3%  | 1.03 | ✅ done |
+| 64  | 250  | 0.000305 | 0.000319 | 0.000336 | 10.2% | 0.67 | ✅ done |
+| 128 | 232  | 0.000293 | 0.000310 | 0.000334 | 14.0% | 0.45 | ✅ done |
+
+**ConvNet vs ViT GGR comparison:**
+| dim | ConvNet GGR | ViT GGR |
+|-----|------------|---------|
+| 8   | 11.1% | 6.6%  |
+| 16  | 12.2% | 7.2%  |
+| 32  | 25.5% | 9.3%  |
+| 64  | 25.6% | 10.2% |
+| 128 | 24.5% | 14.0% |
+
+ViT has systematically lower GGR → better OOD generalization at all dims. Interesting architecture-level signal.
 
 ### probe.py Usage
 
@@ -310,9 +332,23 @@ Probes 8 GT variables across tiers:
 If dim=2 `gravity`/`damping` R² > 0.5 → **true rule extraction** (paper holds)
 If dim=2 R² ≈ 0 everywhere → **uniform failure** (dim=2 low GGR is meaningless)
 
+### ConvNet probe.py Results (partial, 2026-04-15) 🔄
+
+`python probe.py --model conv --sweep` running (PID 782204). Partial results so far:
+
+| dim | gravity | damping | length | angle | ang_vel | init_ang_vel | cam_azimuth | cam_elevation |
+|-----|---------|---------|--------|-------|---------|-------------|------------|--------------|
+| 2   | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.02 | **0.94** |
+| 4   | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.26 | **0.99** |
+| 8   | 0.00 | 0.00 | 0.00 | 0.02 | 0.00 | 0.00 | 0.22 | **1.00** |
+| 16  | 0.01 | 0.02 | 0.04 | 0.06 | 0.00 | 0.00 | 0.45 | **1.00** |
+| 32+ | — | — | — | — | — | — | — | — |
+
+**Key finding:** At ALL dims tested so far, **cam_elevation perfectly dominates the latent space** (R²≈1.0). Physics variables (gravity, damping) near zero at dim≤8. dim=2 low GGR = **uniform failure for physics** — the 2 latent dims are used entirely for camera pose, not physics rules. This changes the paper's dim=2 interpretation.
+
 ### TODO NEXT 📋
 
-**P0 — Run `probe.py` after ConvNet training completes** (command above)
+**P0 — ~~Run probe.py ConvNet~~ RUNNING** — wait for results + run ViT probe after ViT dim=2/4 finish
 
 **P1 — Analysis & plots** (after all training + probes):
 - M1: Reconstruction MSE (IID / Near-OOD / Far-OOD) — already in log.csv
