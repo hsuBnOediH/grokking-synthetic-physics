@@ -238,7 +238,8 @@ These results validated the pipeline and gave initial signal for the compression
 |------|---------|
 | `models_conv.py` | ConvNet encoder-decoder (primary model) |
 | `models.py` | ViT MAE encoder-decoder (comparison model) |
-| `train.py` | Training script: `--model {conv,vit}`, `--latent_dim`, logging, checkpointing |
+| `models_dct.py` | DCT baseline: fixed ortho-DCT encoder/decoder, learned dynamics MLP only |
+| `train.py` | Training script: `--model {conv,vit,dct}`, `--latent_dim`, logging, checkpointing |
 | `design_episodes.py` | **V3** — enumerate 243 band combos, output `episode_design.csv` for Unity |
 | `HDF5PendulumDataset.py` | Fast HDF5 loader; `make_splits()` builds 4 DataLoaders from design CSV |
 | `prepare_hdf5.py` | One-time raw → HDF5 conversion (all 5D fields + episode ID) |
@@ -255,15 +256,18 @@ These results validated the pipeline and gave initial signal for the compression
 - `design_episodes.py` — enumerates 243 band combos, outputs `episode_design.csv`
 - `prepare_hdf5.py` — supports all 5D fields; HDF5 generated (14 GB on server)
 - `HDF5PendulumDataset.py` — preload=True (sequential read + numpy filter); num_workers=0
-- `train.py` — z_std early stopping, `--resume` (crash recovery + extension), rolling checkpoints (`--keep_checkpoints 3`), scheduler state saved
+- `train.py` — z_std early stopping, `--resume`, rolling checkpoints, `--model dct` added
 - `models.py` — ViT decoder output now has `torch.sigmoid()` for [0,1] consistency with ConvNet
+- `models_dct.py` — DCT baseline: fixed encoder/decoder, learned dynamics MLP only ✅ smoke test passed
 - `launch_vit_after_conv.sh` — auto-launches ViT sweep when ConvNet PIDs all finish
 - `probe.py` — linear probe R² analysis; sweeps all dims, outputs CSV + heatmap PNG
+- `presentation_outline.md` — B552 miniconference talk outline (April 21, 11-min)
 - Data on server: `pendulum_data_v3.h5` + `episode_design.csv`
 - **ConvNet v1** — 7 runs × 200 epochs (reference, superseded by v2)
 - **ConvNet v2** — ALL 7 dims complete ✅
-- **ViT v2** — dim=8/16/32/64/128 complete ✅; dim=2/4 still running 🔄
-- **probe.py ConvNet sweep** — running on server (PID 782204) 🔄
+- **ViT v2** — dim=8/16/32/64/128 complete ✅; dim=2/4 still running 🔄 (~ep 344/362)
+- **probe.py ConvNet sweep** — COMPLETE ✅
+- **DCT v2 sweep** — 6 dims running 🔄 (GPU 3-7 + dim=32 test on GPU 2)
 
 ### train.py Key Arguments (updated)
 ```bash
@@ -311,8 +315,8 @@ Logs: `logs/vit_dim{N}_v2.log` | Checkpoints: `runs/vit_dim{N}_v2/`
 
 | dim | final epoch | iid_val | near_ood | far_ood | GGR | z_std | status |
 |-----|------------|---------|---------|---------|-----|-------|--------|
-| 2   | —    | — | — | — | — | — | 🔄 ~ep 276 |
-| 4   | —    | — | — | — | — | — | 🔄 ~ep 291 |
+| 2   | —    | — | — | — | — | — | 🔄 ~ep 344 |
+| 4   | —    | — | — | — | — | — | 🔄 ~ep 362 |
 | 8   | 231  | 0.000361 | 0.000370 | 0.000385 | 6.6%  | 2.52 | ✅ done |
 | 16  | 236  | 0.000333 | 0.000343 | 0.000357 | 7.2%  | 1.56 | ✅ done |
 | 32  | 200  | 0.000322 | 0.000334 | 0.000352 | 9.3%  | 1.03 | ✅ done |
@@ -383,9 +387,18 @@ If dim=2 R² ≈ 0 everywhere → **uniform failure** (dim=2 low GGR is meaningl
 
 **P0 — ~~Run probe.py ConvNet~~ DONE ✅**
 
-**P0 — Run ViT probe** after ViT dim=2/4 finish (~today evening):
+**P0 — Run ViT probe** after ViT dim=2/4 finish (tonight):
 ```bash
 nohup python probe.py --model vit --sweep > logs/probe_vit_v2.log 2>&1 &
+```
+
+**P0 — Launch DCT dim=128** after DCT test (GPU 2) finishes:
+```bash
+CUDA_VISIBLE_DEVICES=2 nohup python train.py --model dct --latent_dim 128 --epochs 2000 \
+  --h5_path pendulum_data_v3.h5 --design_csv episode_design.csv \
+  --save_dir runs/dct_dim128_v2 --keep_checkpoints 3 --save_every 50 \
+  --min_epochs 200 --zstd_patience 50 --zstd_threshold 0.01 \
+  > logs/dct_dim128_v2.log 2>&1 &
 ```
 
 **P1 — Analysis & plots** (after all training + probes):
