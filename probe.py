@@ -35,6 +35,7 @@ from torch.utils.data import DataLoader
 from HDF5PendulumDataset import HDF5PendulumDataset
 from models_conv import ConvBottleneckAE
 from models import ContinuousBottleneckMAE
+from models_dct import DCTBottleneckAE
 
 try:
     from sklearn.linear_model import Ridge
@@ -72,13 +73,15 @@ def encode(model, model_type, s_t):
     if model_type == "conv":
         feat = model.encoder(s_t)                      # [B, C, 4, 4]
         return model.to_latent(feat.view(s_t.shape[0], -1))  # [B, dim]
-    else:  # vit
+    elif model_type == "vit":
         B = s_t.shape[0]
         x = model.patch_embed(s_t)
         cls = model.cls_token.expand(B, -1, -1)
         x = torch.cat((cls, x), dim=1) + model.pos_embed
         x = model.encoder(x)
         return model.to_latent(x[:, 0, :])            # CLS token → z_t
+    else:  # dct
+        return model._encode(s_t)                      # fixed DCT transform
 
 
 def cam_to_spherical(cam_xyz):
@@ -209,8 +212,10 @@ def find_checkpoints(runs_dir, model_type, dims):
 def load_model(model_type, latent_dim, ckpt_path, device):
     if model_type == "conv":
         model = ConvBottleneckAE(latent_dim=latent_dim, action_dim=2)
-    else:
+    elif model_type == "vit":
         model = ContinuousBottleneckMAE(latent_dim=latent_dim, action_dim=2)
+    else:  # dct
+        model = DCTBottleneckAE(latent_dim=latent_dim)
     state = torch.load(ckpt_path, map_location=device)
     if isinstance(state, dict) and "model_state_dict" in state:
         state = state["model_state_dict"]
@@ -263,7 +268,7 @@ def plot_heatmap(df_model, model_type, output_path):
                         color="white" if v > 0.65 else "black")
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.savefig(output_path, bbox_inches="tight", format="svg")
     plt.close()
     print(f"  Heatmap saved: {output_path}", flush=True)
 
@@ -272,7 +277,7 @@ def plot_heatmap(df_model, model_type, output_path):
 
 def main():
     parser = argparse.ArgumentParser(description="Linear probe for compression spectrum")
-    parser.add_argument("--model",  default="conv", choices=["conv", "vit"])
+    parser.add_argument("--model",  default="conv", choices=["conv", "vit", "dct"])
     parser.add_argument("--latent_dim", type=int, default=None,
                         help="Required for single-model mode")
     parser.add_argument("--checkpoint", default=None,
@@ -281,6 +286,8 @@ def main():
                         help="Sweep all available dims for --model")
     parser.add_argument("--both",  action="store_true",
                         help="Sweep both conv and vit")
+    parser.add_argument("--all",   action="store_true",
+                        help="Sweep conv, vit, and dct")
     parser.add_argument("--dims",  nargs="+", type=int,
                         default=[2, 4, 8, 16, 32, 64, 128])
     parser.add_argument("--runs_dir",   default="runs")
@@ -307,7 +314,11 @@ def main():
     print(f"IID transitions: {len(ds)}", flush=True)
 
     # ── Determine what to run ──────────────────────────────────────────
-    if args.both:
+    if args.all:
+        model_types = ["conv", "vit", "dct"]
+        sweep_dims  = {mt: find_checkpoints(args.runs_dir, mt, args.dims)
+                       for mt in model_types}
+    elif args.both:
         model_types = ["conv", "vit"]
         sweep_dims  = {mt: find_checkpoints(args.runs_dir, mt, args.dims)
                        for mt in model_types}
@@ -345,7 +356,7 @@ def main():
     for mt in results["model"].unique():
         sub = results[results["model"] == mt].sort_values("latent_dim")
         if len(sub) >= 2:
-            hm_path = os.path.join(args.output_dir, f"probe_heatmap_{mt}.png")
+            hm_path = os.path.join(args.output_dir, f"probe_heatmap_{mt}.svg")
             plot_heatmap(sub, mt, hm_path)
 
 
