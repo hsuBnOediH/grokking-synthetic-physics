@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="870" height="355" viewBox="0 0 870 355">
+<rect width="870" height="355" fill="white"/>
+
+<!-- ===== PANEL TITLES ===== -->
+<text x="273" y="18" text-anchor="middle" fill="#1565c0" font-family="Arial,sans-serif" font-size="13" font-weight="bold">ConvNet — gravity emerges at dim 32</text>
+<text x="723" y="18" text-anchor="middle" fill="#006064" font-family="Arial,sans-serif" font-size="13" font-weight="bold">ViT — gravity emerges at dim 128</text>
+
+<!-- ===== COLUMN HEADERS ===== -->
+<!-- ConvNet dims: x centers = 164, 204, 244, 284, 324, 364, 404 -->
+<text x="164" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">2</text>
+<text x="204" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">4</text>
+<text x="244" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">8</text>
+<text x="284" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">16</text>
+<text x="324" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">32</text>
+<text x="364" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">64</text>
+<text x="404" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">128</text>
+<!-- ViT dims: x centers = 594, 634, 674, 714, 754, 794, 834 -->
+<text x="594" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">2</text>
+<text x="634" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">4</text>
+<text x="674" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">8</text>
+<text x="714" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">16</text>
+<text x="754" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">32</text>
+<text x="794" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">64</text>
+<text x="834" y="36" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">128</text>
+<!-- x-axis labels -->
+<text x="284" y="347" text-anchor="middle" fill="#555" font-family="Arial,sans-serif" font-size="11">bottleneck dim</text>
+<text x="714" y="347" text-anchor="middle" fill="#555" font-family="Arial,sans-serif" font-size="11">bottleneck dim</text>
+
+<!-- ===== ROW LABELS (left + right panels) ===== -->
+<!-- y centers: 55, 89, 123, 157, 191, 225, 259, 293 -->
+<text x="143" y="59"  text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">gravity [tier B]</text>
+<text x="143" y="93"  text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">damping [tier B]</text>
+<text x="143" y="127" text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">length [tier A]</text>
+<text x="143" y="161" text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">angle [tier A]</text>
+<text x="143" y="195" text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">ang_vel [tier C]</text>
+<text x="143" y="229" text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">init_vel [tier C]</text>
+<text x="143" y="263" text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">cam_azimuth [C]</text>
+<text x="143" y="297" text-anchor="end" fill="#333" font-family="Arial,sans-serif" font-size="10">cam_elevation [C]</text>
+
+<!-- ===== TIER SEPARATORS — ConvNet ===== -->
+<!-- After row 1 (damping→length): y = 44+34+2 = 80, draw at y=80 -->
+<line x1="145" y1="110" x2="424" y2="110" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2"/>
+<line x1="145" y1="178" x2="424" y2="178" stroke="#999" stroke-width="0.8" stroke-dasharray="3,2"/>
+<!-- After row 1 (B→A) at y=107 -->
+<line x1="145" y1="107" x2="424" y2="107" stroke="#666" stroke-width="1.2"/>
+<!-- After row 3 (A→C) at y=175 -->
+<line x1="145" y1="175" x2="424" y2="175" stroke="#666" stroke-width="1.2"/>
+
+<!-- ===== TIER SEPARATORS — ViT ===== -->
+<line x1="575" y1="107" x2="854" y2="107" stroke="#666" stroke-width="1.2"/>
+<line x1="575" y1="175" x2="854" y2="175" stroke="#666" stroke-width="1.2"/>
+
+<!-- ================================================================ -->
+<!-- CONVNET CELLS (x_start: 145, step: 40, cell_w: 38, cell_h: 30)  -->
+<!-- y_starts: 44, 78, 112, 146, 180, 214, 248, 282                   -->
+<!-- ================================================================ -->
+
+<!-- Row 0: gravity [0.00,0.00,0.00,0.00,0.72,0.69,0.71] -->
+<rect x="145" y="44" width="38" height="30" fill="#fffff0"/><text x="164" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="185" y="44" width="38" height="30" fill="#fffff0"/><text x="204" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="225" y="44" width="38" height="30" fill="#fffff0"/><text x="244" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="265" y="44" width="38" height="30" fill="#fffff0"/><text x="284" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="305" y="44" width="38" height="30" fill="#e85d00"/><text x="324" y="63" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.72</text>
+<rect x="345" y="44" width="38" height="30" fill="#e85d00"/><text x="364" y="63" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.69</text>
+<rect x="385" y="44" width="38" height="30" fill="#e85d00"/><text x="404" y="63" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.71</text>
+
+<!-- Row 1: damping [0.00,0.00,0.00,0.02,0.21,0.53,0.43] -->
+<rect x="145" y="78" width="38" height="30" fill="#fffff0"/><text x="164" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="185" y="78" width="38" height="30" fill="#fffff0"/><text x="204" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="225" y="78" width="38" height="30" fill="#fffff0"/><text x="244" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="265" y="78" width="38" height="30" fill="#fffff0"/><text x="284" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.02</text>
+<rect x="305" y="78" width="38" height="30" fill="#fde77c"/><text x="324" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.21</text>
+<rect x="345" y="78" width="38" height="30" fill="#fdb462"/><text x="364" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.53</text>
+<rect x="385" y="78" width="38" height="30" fill="#fdb462"/><text x="404" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.43</text>
+
+<!-- Row 2: length [0.00,0.00,0.00,0.04,0.06,0.21,0.26] -->
+<rect x="145" y="112" width="38" height="30" fill="#fffff0"/><text x="164" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="185" y="112" width="38" height="30" fill="#fffff0"/><text x="204" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="225" y="112" width="38" height="30" fill="#fffff0"/><text x="244" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="265" y="112" width="38" height="30" fill="#fffff0"/><text x="284" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.04</text>
+<rect x="305" y="112" width="38" height="30" fill="#fff9c4"/><text x="324" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.06</text>
+<rect x="345" y="112" width="38" height="30" fill="#fde77c"/><text x="364" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.21</text>
+<rect x="385" y="112" width="38" height="30" fill="#fde77c"/><text x="404" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.26</text>
+
+<!-- Row 3: angle [0.00,0.00,0.02,0.06,0.12,0.12,0.33] -->
+<rect x="145" y="146" width="38" height="30" fill="#fffff0"/><text x="164" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="185" y="146" width="38" height="30" fill="#fffff0"/><text x="204" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="225" y="146" width="38" height="30" fill="#fffff0"/><text x="244" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.02</text>
+<rect x="265" y="146" width="38" height="30" fill="#fff9c4"/><text x="284" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.06</text>
+<rect x="305" y="146" width="38" height="30" fill="#fff9c4"/><text x="324" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.12</text>
+<rect x="345" y="146" width="38" height="30" fill="#fff9c4"/><text x="364" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.12</text>
+<rect x="385" y="146" width="38" height="30" fill="#fdb462"/><text x="404" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.33</text>
+
+<!-- Row 4: ang_vel [0.00,0.00,0.00,0.01,0.01,0.01,0.01] -->
+<rect x="145" y="180" width="38" height="30" fill="#fffff0"/><text x="164" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="185" y="180" width="38" height="30" fill="#fffff0"/><text x="204" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="225" y="180" width="38" height="30" fill="#fffff0"/><text x="244" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="265" y="180" width="38" height="30" fill="#fffff0"/><text x="284" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="305" y="180" width="38" height="30" fill="#fffff0"/><text x="324" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="345" y="180" width="38" height="30" fill="#fffff0"/><text x="364" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="385" y="180" width="38" height="30" fill="#fffff0"/><text x="404" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+
+<!-- Row 5: init_ang_vel [0.00,0.00,0.00,0.00,0.01,0.01,0.01] -->
+<rect x="145" y="214" width="38" height="30" fill="#fffff0"/><text x="164" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="185" y="214" width="38" height="30" fill="#fffff0"/><text x="204" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="225" y="214" width="38" height="30" fill="#fffff0"/><text x="244" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="265" y="214" width="38" height="30" fill="#fffff0"/><text x="284" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="305" y="214" width="38" height="30" fill="#fffff0"/><text x="324" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="345" y="214" width="38" height="30" fill="#fffff0"/><text x="364" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="385" y="214" width="38" height="30" fill="#fffff0"/><text x="404" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+
+<!-- Row 6: cam_azimuth [0.02,0.26,0.22,0.45,0.55,0.73,0.76] -->
+<rect x="145" y="248" width="38" height="30" fill="#fffff0"/><text x="164" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.02</text>
+<rect x="185" y="248" width="38" height="30" fill="#fde77c"/><text x="204" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.26</text>
+<rect x="225" y="248" width="38" height="30" fill="#fde77c"/><text x="244" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.22</text>
+<rect x="265" y="248" width="38" height="30" fill="#fdb462"/><text x="284" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.45</text>
+<rect x="305" y="248" width="38" height="30" fill="#e85d00"/><text x="324" y="267" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.55</text>
+<rect x="345" y="248" width="38" height="30" fill="#e85d00"/><text x="364" y="267" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.73</text>
+<rect x="385" y="248" width="38" height="30" fill="#c44a00"/><text x="404" y="267" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.76</text>
+
+<!-- Row 7: cam_elevation [0.94,0.99,1.00,1.00,1.00,1.00,1.00] -->
+<rect x="145" y="282" width="38" height="30" fill="#c44a00"/><text x="164" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.94</text>
+<rect x="185" y="282" width="38" height="30" fill="#8b2200"/><text x="204" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.99</text>
+<rect x="225" y="282" width="38" height="30" fill="#8b2200"/><text x="244" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="265" y="282" width="38" height="30" fill="#8b2200"/><text x="284" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="305" y="282" width="38" height="30" fill="#8b2200"/><text x="324" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="345" y="282" width="38" height="30" fill="#8b2200"/><text x="364" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="385" y="282" width="38" height="30" fill="#8b2200"/><text x="404" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+
+<!-- ================================================================ -->
+<!-- VIT CELLS (x_offset = +430 from ConvNet)                         -->
+<!-- x_starts: 575,615,655,695,735,775,815                            -->
+<!-- ================================================================ -->
+
+<!-- Row 0: gravity [0.00,0.00,0.00,0.00,0.00,0.06,0.65] -->
+<rect x="575" y="44" width="38" height="30" fill="#fffff0"/><text x="594" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="615" y="44" width="38" height="30" fill="#fffff0"/><text x="634" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="655" y="44" width="38" height="30" fill="#fffff0"/><text x="674" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="695" y="44" width="38" height="30" fill="#fffff0"/><text x="714" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="735" y="44" width="38" height="30" fill="#fffff0"/><text x="754" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="775" y="44" width="38" height="30" fill="#fff9c4"/><text x="794" y="63" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.06</text>
+<rect x="815" y="44" width="38" height="30" fill="#e85d00"/><text x="834" y="63" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.65</text>
+
+<!-- Row 1: damping [0.00,0.00,0.00,0.00,0.01,0.13,0.57] -->
+<rect x="575" y="78" width="38" height="30" fill="#fffff0"/><text x="594" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="615" y="78" width="38" height="30" fill="#fffff0"/><text x="634" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="655" y="78" width="38" height="30" fill="#fffff0"/><text x="674" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="695" y="78" width="38" height="30" fill="#fffff0"/><text x="714" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="735" y="78" width="38" height="30" fill="#fffff0"/><text x="754" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="775" y="78" width="38" height="30" fill="#fff9c4"/><text x="794" y="97" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.13</text>
+<rect x="815" y="78" width="38" height="30" fill="#e85d00"/><text x="834" y="97" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.57</text>
+
+<!-- Row 2: length [0.00,0.00,0.01,0.02,0.03,0.03,0.10] -->
+<rect x="575" y="112" width="38" height="30" fill="#fffff0"/><text x="594" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="615" y="112" width="38" height="30" fill="#fffff0"/><text x="634" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="655" y="112" width="38" height="30" fill="#fffff0"/><text x="674" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="695" y="112" width="38" height="30" fill="#fffff0"/><text x="714" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.02</text>
+<rect x="735" y="112" width="38" height="30" fill="#fffff0"/><text x="754" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.03</text>
+<rect x="775" y="112" width="38" height="30" fill="#fffff0"/><text x="794" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.03</text>
+<rect x="815" y="112" width="38" height="30" fill="#fff9c4"/><text x="834" y="131" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.10</text>
+
+<!-- Row 3: angle [0.00,0.00,0.00,0.09,0.13,0.13,0.16] -->
+<rect x="575" y="146" width="38" height="30" fill="#fffff0"/><text x="594" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="615" y="146" width="38" height="30" fill="#fffff0"/><text x="634" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="655" y="146" width="38" height="30" fill="#fffff0"/><text x="674" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="695" y="146" width="38" height="30" fill="#fff9c4"/><text x="714" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.09</text>
+<rect x="735" y="146" width="38" height="30" fill="#fff9c4"/><text x="754" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.13</text>
+<rect x="775" y="146" width="38" height="30" fill="#fff9c4"/><text x="794" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.13</text>
+<rect x="815" y="146" width="38" height="30" fill="#fde77c"/><text x="834" y="165" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.16</text>
+
+<!-- Row 4: ang_vel [0.00,0.00,0.00,0.00,0.01,0.01,0.01] -->
+<rect x="575" y="180" width="38" height="30" fill="#fffff0"/><text x="594" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="615" y="180" width="38" height="30" fill="#fffff0"/><text x="634" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="655" y="180" width="38" height="30" fill="#fffff0"/><text x="674" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="695" y="180" width="38" height="30" fill="#fffff0"/><text x="714" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="735" y="180" width="38" height="30" fill="#fffff0"/><text x="754" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="775" y="180" width="38" height="30" fill="#fffff0"/><text x="794" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+<rect x="815" y="180" width="38" height="30" fill="#fffff0"/><text x="834" y="199" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+
+<!-- Row 5: init_ang_vel [0.00,0.00,0.00,0.00,0.00,0.00,0.01] -->
+<rect x="575" y="214" width="38" height="30" fill="#fffff0"/><text x="594" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="615" y="214" width="38" height="30" fill="#fffff0"/><text x="634" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="655" y="214" width="38" height="30" fill="#fffff0"/><text x="674" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="695" y="214" width="38" height="30" fill="#fffff0"/><text x="714" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="735" y="214" width="38" height="30" fill="#fffff0"/><text x="754" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="775" y="214" width="38" height="30" fill="#fffff0"/><text x="794" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.00</text>
+<rect x="815" y="214" width="38" height="30" fill="#fffff0"/><text x="834" y="233" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.01</text>
+
+<!-- Row 6: cam_azimuth [0.02,0.04,0.30,0.45,0.57,0.74,0.80] -->
+<rect x="575" y="248" width="38" height="30" fill="#fffff0"/><text x="594" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.02</text>
+<rect x="615" y="248" width="38" height="30" fill="#fffff0"/><text x="634" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.04</text>
+<rect x="655" y="248" width="38" height="30" fill="#fdb462"/><text x="674" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.30</text>
+<rect x="695" y="248" width="38" height="30" fill="#fdb462"/><text x="714" y="267" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="9">0.45</text>
+<rect x="735" y="248" width="38" height="30" fill="#e85d00"/><text x="754" y="267" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.57</text>
+<rect x="775" y="248" width="38" height="30" fill="#e85d00"/><text x="794" y="267" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.74</text>
+<rect x="815" y="248" width="38" height="30" fill="#c44a00"/><text x="834" y="267" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.80</text>
+
+<!-- Row 7: cam_elevation [0.97,1.00,0.99,1.00,1.00,1.00,1.00] -->
+<rect x="575" y="282" width="38" height="30" fill="#8b2200"/><text x="594" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.97</text>
+<rect x="615" y="282" width="38" height="30" fill="#8b2200"/><text x="634" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="655" y="282" width="38" height="30" fill="#8b2200"/><text x="674" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">0.99</text>
+<rect x="695" y="282" width="38" height="30" fill="#8b2200"/><text x="714" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="735" y="282" width="38" height="30" fill="#8b2200"/><text x="754" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="775" y="282" width="38" height="30" fill="#8b2200"/><text x="794" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+<rect x="815" y="282" width="38" height="30" fill="#8b2200"/><text x="834" y="301" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9">1.00</text>
+
+<!-- ===== COLORBAR (far right) ===== -->
+<defs>
+  <linearGradient id="cbar" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0%"   stop-color="#fffff0"/>
+    <stop offset="20%"  stop-color="#fff9c4"/>
+    <stop offset="35%"  stop-color="#fde77c"/>
+    <stop offset="50%"  stop-color="#fdb462"/>
+    <stop offset="65%"  stop-color="#e85d00"/>
+    <stop offset="82%"  stop-color="#c44a00"/>
+    <stop offset="100%" stop-color="#8b2200"/>
+  </linearGradient>
+</defs>
+<rect x="854" y="44" width="12" height="268" fill="url(#cbar)" stroke="#aaa" stroke-width="0.5"/>
+<text x="867" y="48"  fill="#444" font-family="Arial,sans-serif" font-size="9" text-anchor="start">1.0</text>
+<text x="867" y="182" fill="#444" font-family="Arial,sans-serif" font-size="9" text-anchor="start">0.5</text>
+<text x="867" y="314" fill="#444" font-family="Arial,sans-serif" font-size="9" text-anchor="start">0.0</text>
+<text x="860" y="335" fill="#444" font-family="Arial,sans-serif" font-size="9" text-anchor="middle">R²</text>
+
+<!-- Panel divider -->
+<line x1="430" y1="25" x2="430" y2="320" stroke="#dddddd" stroke-width="1"/>
+
+</svg>

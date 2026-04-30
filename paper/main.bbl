@@ -1,0 +1,164 @@
+\begin{thebibliography}{24}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Aamodt and Plaza(1994)}]{aamodt1994casebased}
+Aamodt, A.; and Plaza, E. 1994.
+\newblock Case-Based Reasoning: Foundational Issues, Methodological Variations,
+  and System Approaches.
+\newblock \emph{AI Communications}, 7(1): 39--59.
+
+\bibitem[{Alain and Bengio(2016)}]{alain2016understanding}
+Alain, G.; and Bengio, Y. 2016.
+\newblock Understanding Intermediate Layers Using Linear Classifier Probes.
+\newblock \emph{arXiv preprint arXiv:1610.01644}.
+
+\bibitem[{Bender et~al.(2021)Bender, Gebru, McMillan-Major, and
+  Shmitchell}]{bender2021stochastic}
+Bender, E.~M.; Gebru, T.; McMillan-Major, A.; and Shmitchell, S. 2021.
+\newblock On the Dangers of Stochastic Parrots: Can Language Models Be Too Big?
+\newblock In \emph{Proceedings of the 2021 {ACM} Conference on Fairness,
+  Accountability, and Transparency}, FAccT '21, 610--623. Association for
+  Computing Machinery.
+
+\bibitem[{Bender and Koller(2020)}]{bender2020climbing}
+Bender, E.~M.; and Koller, A. 2020.
+\newblock Climbing towards {NLU}: On Meaning, Form, and Understanding in the
+  Age of Data.
+\newblock In \emph{Proceedings of the 58th Annual Meeting of the Association
+  for Computational Linguistics}, 5185--5198. Association for Computational
+  Linguistics.
+
+\bibitem[{Gan and Liu(2025)}]{gan2025reversebottleneck}
+Gan, Z.; and Liu, Y. 2025.
+\newblock Towards a Theoretical Understanding of Synthetic Data in {LLM}
+  Post-Training: A Reverse-Bottleneck Perspective.
+\newblock In \emph{The Thirteenth International Conference on Learning
+  Representations}.
+
+\bibitem[{Ha and Schmidhuber(2018)}]{ha2018world}
+Ha, D.; and Schmidhuber, J. 2018.
+\newblock World Models.
+\newblock \emph{arXiv preprint arXiv:1803.10122}.
+
+\bibitem[{Hafner et~al.(2023)Hafner, Pasukonis, Ba, and
+  Lillicrap}]{hafner2023dreamer}
+Hafner, D.; Pasukonis, J.; Ba, J.; and Lillicrap, T. 2023.
+\newblock Mastering Diverse Domains through World Models.
+\newblock \emph{arXiv preprint arXiv:2301.04104}.
+
+\bibitem[{He et~al.(2022)He, Chen, Xie, Li, Doll{\'a}r, and
+  Girshick}]{he2022masked}
+He, K.; Chen, X.; Xie, S.; Li, Y.; Doll{\'a}r, P.; and Girshick, R. 2022.
+\newblock Masked Autoencoders Are Scalable Vision Learners.
+\newblock In \emph{Proceedings of the {IEEE/CVF} Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 16000--16009.
+
+\bibitem[{Hendrycks et~al.(2021)Hendrycks, Burns, Basart, Zou, Mazeika, Song,
+  and Steinhardt}]{hendrycks2021mmlu}
+Hendrycks, D.; Burns, C.; Basart, S.; Zou, A.; Mazeika, M.; Song, D.; and
+  Steinhardt, J. 2021.
+\newblock Measuring Massive Multitask Language Understanding.
+\newblock In \emph{International Conference on Learning Representations}.
+
+\bibitem[{Iten et~al.(2020)Iten, Metger, Wilming, Del~Rio, and
+  Renner}]{iten2020discovering}
+Iten, R.; Metger, T.; Wilming, H.; Del~Rio, L.; and Renner, R. 2020.
+\newblock Discovering Physical Concepts with Neural Networks.
+\newblock \emph{Physical Review Letters}, 124(1): 010508.
+
+\bibitem[{Jiang et~al.(2025)Jiang, Wang, Shen, Kim, and Kim}]{jiang2025survey}
+Jiang, J.; Wang, F.; Shen, J.; Kim, S.; and Kim, S. 2025.
+\newblock A Survey on Large Language Models for Code Generation.
+\newblock \emph{ACM Transactions on Software Engineering and Methodology},
+  35(2): 1--72.
+
+\bibitem[{Juliani et~al.(2018)Juliani, Berges, Teng, Cohen, Harper, Elion, Goy,
+  Gao, Henry, Mattar, and Lange}]{juliani2018unity}
+Juliani, A.; Berges, V.-P.; Teng, E.; Cohen, A.; Harper, J.; Elion, C.; Goy,
+  C.; Gao, Y.; Henry, H.; Mattar, M.; and Lange, D. 2018.
+\newblock Unity: {A} General Platform for Intelligent Agents.
+\newblock \emph{arXiv preprint arXiv:1809.02627}.
+
+\bibitem[{LeCun(2022)}]{lecun2022path}
+LeCun, Y. 2022.
+\newblock A Path Towards Autonomous Machine Intelligence.
+\newblock Technical report, Meta AI Research.
+
+\bibitem[{Lenat and Feigenbaum(1991)}]{lenat1991thresholds}
+Lenat, D.~B.; and Feigenbaum, E.~A. 1991.
+\newblock On the Thresholds of Knowledge.
+\newblock \emph{Artificial Intelligence}, 47(1--3): 185--250.
+
+\bibitem[{L{\'o}pez, Massmann, and Triesch(2024)}]{lopez2024toward}
+L{\'o}pez, F.~M.; Massmann, J.; and Triesch, J. 2024.
+\newblock Toward Hierarchical Compositionality with Shallow Hierarchical
+  Networks.
+\newblock In \emph{Conference on Cognitive Computational Neuroscience (CCN)}.
+
+\bibitem[{Olshausen and Field(2004)}]{olshausen2004sparse}
+Olshausen, B.~A.; and Field, D.~J. 2004.
+\newblock Sparse coding of sensory inputs.
+\newblock \emph{Current Opinion in Neurobiology}, 14(4): 481--487.
+
+\bibitem[{Ouyang et~al.(2022)Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin,
+  Zhang, Agarwal, Slama, Ray, Schulman, Hilton, Kelton, Miller, Simens, Askell,
+  Welinder, Christiano, Leike, and Lowe}]{ouyang2022training}
+Ouyang, L.; Wu, J.; Jiang, X.; Almeida, D.; Wainwright, C.~L.; Mishkin, P.;
+  Zhang, C.; Agarwal, S.; Slama, K.; Ray, A.; Schulman, J.; Hilton, J.; Kelton,
+  F.; Miller, L.; Simens, M.; Askell, A.; Welinder, P.; Christiano, P.~F.;
+  Leike, J.; and Lowe, R. 2022.
+\newblock Training language models to follow instructions with human feedback.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, 27730--27744.
+
+\bibitem[{Power et~al.(2022)Power, Burda, Edwards, Babuschkin, and
+  Misra}]{power2022grokking}
+Power, A.; Burda, Y.; Edwards, H.; Babuschkin, I.; and Misra, V. 2022.
+\newblock Grokking: Generalization Beyond Overfitting on Small Algorithmic
+  Datasets.
+\newblock \emph{arXiv preprint arXiv:2201.02177}.
+
+\bibitem[{Riochet et~al.(2018)Riochet, Castro, Bernard, Lerer, Fergus, Izard,
+  and Dupoux}]{riochet2018intphys}
+Riochet, R.; Castro, M.~Y.; Bernard, M.; Lerer, A.; Fergus, R.; Izard, V.; and
+  Dupoux, E. 2018.
+\newblock {IntPhys}: A Framework and Benchmark for Visual Intuitive Physics
+  Reasoning.
+\newblock \emph{arXiv preprint arXiv:1803.07616}.
+
+\bibitem[{Shwartz-Ziv and Tishby(2017)}]{shwartz2017opening}
+Shwartz-Ziv, R.; and Tishby, N. 2017.
+\newblock Opening the Black Box of Deep Neural Networks via Information.
+\newblock \emph{arXiv preprint arXiv:1703.00810}.
+
+\bibitem[{Spelke and Kinzler(2007)}]{spelke2007core}
+Spelke, E.~S.; and Kinzler, K.~D. 2007.
+\newblock Core knowledge.
+\newblock \emph{Developmental Science}, 10(1): 89--96.
+
+\bibitem[{Tishby, Pereira, and Bialek(1999)}]{tishby1999information}
+Tishby, N.; Pereira, F.~C.; and Bialek, W. 1999.
+\newblock The Information Bottleneck Method.
+\newblock In \emph{Proceedings of the 37th Annual Allerton Conference on
+  Communication, Control, and Computing}, 368--377.
+
+\bibitem[{Wang et~al.(2023)Wang, Kordi, Mishra, Liu, Smith, Khashabi, and
+  Hajishirzi}]{wang2023selfinstruct}
+Wang, Y.; Kordi, Y.; Mishra, S.; Liu, A.; Smith, N.~A.; Khashabi, D.; and
+  Hajishirzi, H. 2023.
+\newblock {Self-Instruct}: Aligning Language Models with Self-Generated
+  Instructions.
+\newblock In \emph{Proceedings of the 61st Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)}, 13484--13508.
+  Association for Computational Linguistics.
+
+\bibitem[{Wei et~al.(2022)Wei, Wang, Schuurmans, Bosma, Ichter, Xia, Chi, Le,
+  and Zhou}]{wei2022chain}
+Wei, J.; Wang, X.; Schuurmans, D.; Bosma, M.; Ichter, B.; Xia, F.; Chi, E.~H.;
+  Le, Q.~V.; and Zhou, D. 2022.
+\newblock Chain-of-Thought Prompting Elicits Reasoning in Large Language
+  Models.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, 24824--24837.
+
+\end{thebibliography}

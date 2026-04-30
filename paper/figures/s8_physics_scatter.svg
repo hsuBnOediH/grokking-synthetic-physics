@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="475" viewBox="0 0 500 475">
+<rect width="500" height="475" fill="white"/>
+
+<line x1="80" y1="30" x2="80" y2="352" stroke="#333" stroke-width="1.5"/>
+<line x1="78" y1="350" x2="462" y2="350" stroke="#333" stroke-width="1.5"/>
+
+<line x1="206" y1="30" x2="206" y2="350" stroke="#bbbbbb" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="336" y1="30" x2="336" y2="350" stroke="#bbbbbb" stroke-width="1" stroke-dasharray="4,3"/>
+
+<line x1="80" y1="244" x2="462" y2="244" stroke="#bbbbbb" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="80" y1="136" x2="462" y2="136" stroke="#bbbbbb" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="206" y="244" width="130" height="106" fill="#e3f2fd" opacity="0.6"/>
+<rect x="206" y="30"  width="130" height="106" fill="#e3f2fd" opacity="0.6"/>
+<rect x="336" y="244" width="126" height="106" fill="#e3f2fd" opacity="0.6"/>
+<rect x="336" y="30"  width="126" height="106" fill="#e3f2fd" opacity="0.6"/>
+
+<rect x="80"  y="30"  width="126" height="320" fill="#ffebee" opacity="0.5"/>
+<rect x="80"  y="136" width="382" height="108" fill="#fff3e0" opacity="0.5"/>
+<rect x="80"  y="136" width="126" height="108" fill="#ffcdd2" opacity="0.4"/>
+
+<text x="143" y="378" text-anchor="middle" fill="#555" font-family="Arial,sans-serif" font-size="11">Low (OOD)</text>
+<text x="271" y="378" text-anchor="middle" fill="#555" font-family="Arial,sans-serif" font-size="11">Mid</text>
+<text x="399" y="378" text-anchor="middle" fill="#555" font-family="Arial,sans-serif" font-size="11">High</text>
+<text x="69" y="297" text-anchor="end" fill="#555" font-family="Arial,sans-serif" font-size="11">Low</text>
+<text x="69" y="193" text-anchor="end" fill="#555" font-family="Arial,sans-serif" font-size="11">Mid</text>
+<text x="69" y="89"  text-anchor="end" fill="#555" font-family="Arial,sans-serif" font-size="11">High</text>
+<text x="69" y="107" text-anchor="end" fill="#cc8800" font-family="Arial,sans-serif" font-size="10">(OOD)</text>
+
+<circle cx="230" cy="310" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="255" cy="290" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="280" cy="320" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="310" cy="275" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="235" cy="55"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="265" cy="75"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="295" cy="60"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="320" cy="80"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="360" cy="305" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="390" cy="280" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="420" cy="315" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="445" cy="295" r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="355" cy="65"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="385" cy="90"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="415" cy="50"  r="4" fill="#1565c0" opacity="0.7"/>
+<circle cx="440" cy="85"  r="4" fill="#1565c0" opacity="0.7"/>
+
+<rect x="226" y="166" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="256" y="195" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="285" y="175" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="315" y="200" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="355" y="170" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="390" y="198" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="420" y="183" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="100" y="310" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="130" y="285" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="160" y="305" width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="105" y="60"  width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="140" y="82"  width="9" height="9" fill="#e65100" opacity="0.8"/>
+<rect x="170" y="55"  width="9" height="9" fill="#e65100" opacity="0.8"/>
+
+<polygon points="118,172 122,160 126,172 115,164 129,164" fill="#c62828"/>
+<polygon points="148,192 152,180 156,192 145,184 159,184" fill="#c62828"/>
+<polygon points="178,162 182,150 186,162 175,154 189,154" fill="#c62828"/>
+
+<text x="271" y="406" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="13">Gravity (m/s²)</text>
+<text x="20" y="190" text-anchor="middle" fill="#333" font-family="Arial,sans-serif" font-size="13"
+      transform="rotate(-90, 20, 190)">Length (m)</text>
+
+<text x="80"  y="365" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">4.0</text>
+<text x="206" y="365" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">7.3</text>
+<text x="336" y="365" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">10.7</text>
+<text x="462" y="365" text-anchor="middle" fill="#444" font-family="Arial,sans-serif" font-size="11">14.0</text>
+<text x="72" y="354" text-anchor="end" fill="#444" font-family="Arial,sans-serif" font-size="11">0.5</text>
+<text x="72" y="248" text-anchor="end" fill="#444" font-family="Arial,sans-serif" font-size="11">1.0</text>
+<text x="72" y="140" text-anchor="end" fill="#444" font-family="Arial,sans-serif" font-size="11">1.5</text>
+<text x="72" y="34"  text-anchor="end" fill="#444" font-family="Arial,sans-serif" font-size="11">2.0</text>
+
+<rect x="60" y="430" width="380" height="40" rx="3" fill="white" fill-opacity="0.92" stroke="#ccc" stroke-width="1"/>
+<circle cx="80" cy="448" r="5" fill="#1565c0" opacity="0.9"/>
+<text x="92" y="452" fill="#333" font-family="Arial,sans-serif" font-size="11">IID (k=0)</text>
+<rect x="170" y="443" width="9" height="9" fill="#e65100" opacity="0.9"/>
+<text x="186" y="452" fill="#333" font-family="Arial,sans-serif" font-size="11">Near-OOD (k=1,2)</text>
+<polygon points="307,453 311,442 315,453 304,446 318,446" fill="#c62828"/>
+<text x="324" y="452" fill="#333" font-family="Arial,sans-serif" font-size="11">Far-OOD (k≥3)</text>
+<text x="250" y="467" text-anchor="middle" fill="#888" font-family="Arial,sans-serif" font-size="9" font-style="italic">2D projection; k over all 5 dims</text>
+
+<text x="143" y="43" text-anchor="middle" fill="#c62828" font-family="Arial,sans-serif" font-size="11" font-weight="bold">gravity holdout</text>
+<text x="458" y="152" text-anchor="end" fill="#e65100" font-family="Arial,sans-serif" font-size="11" font-weight="bold">length holdout</text>
+</svg>

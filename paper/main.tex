@@ -1,0 +1,247 @@
+%File: main.tex
+%CSB552 Final Project --- Camera-ready AAAI 2025 format
+%
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage{aaai25}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in}  % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in}  % DO NOT CHANGE THIS
+
+% add by me
+\usepackage{amsmath}
+\usepackage[inkscapelatex=false]{svg}
+%
+
+\pdfinfo{
+/TemplateVersion (2025.1)
+}
+
+\setcounter{secnumdepth}{0}
+
+% ============ TITLE / AUTHORS ============
+\title{Beyond the ``Illusion of Intelligence'' \\Exploring the Knowledge Compression Spectrum}
+
+\author{
+    Feng Li\textsuperscript{\rm 1},
+    Khurrum Ali\textsuperscript{\rm 1}
+}
+\affiliations{
+    \textsuperscript{\rm 1}Indiana University Bloomington \\
+    fl21@iu.edu, alikh@iu.edu
+}
+
+\begin{document}
+\maketitle
+
+% ============ ABSTRACT ============
+\begin{abstract}
+  Large language models have demonstrated remarkable capabilities across a wide range of tasks, but their knowledge is fundamentally bounded: all training data originates from human-created text, imposing a ceiling on what these models can know. We argue that true unsupervised learning requires an agent that generates knowledge purely from raw input-output experience, without relying on human-authored data.
+  We propose that compression is the mechanism: knowledge is not a discrete category but a continuous spectrum, from verbatim memorization to abstract rules, and compression pressure drives a learner toward the generalizable end of this spectrum.
+  To test this thesis, we train encoder-bottleneck-decoder world models on a synthetic Unity environment whose physical laws we author and fully control, sweeping the bottleneck width across seven values for both a ConvNet and a Vision Transformer.
+  The gross generalization signal supports the thesis: smaller bottlenecks produce smaller training-to-OOD gaps. However, linear probes on the frozen latent reveal that this apparent generalization is a visual shortcut --- models at small bottleneck widths encode camera elevation rather than physical variables, because single-step next-frame prediction does not require physics knowledge.
+  We identify task design as the fundamental limitation: the compression pressure was never directed at the right target. These findings do not refute the compression-as-intelligence thesis, but they sharpen the conditions under which it can be tested.
+\end{abstract}
+
+% ============ 1. INTRODUCTION ============
+\section{Introduction}
+
+Large language models have achieved remarkable results across language understanding \citep{hendrycks2021mmlu}, reasoning
+\citep{wei2022chain}, and generation \citep{jiang2025survey}.
+Yet their knowledge has a structural ceiling \citep{bender2021stochastic}: every token in the training corpus was produced by a human, and
+the model is therefore bounded by the knowledge humans have already expressed in text.
+
+The same ceiling applies, even more visibly, to knowledge-based AI systems \citep{lenat1991thresholds}. Case-based reasoning systems store and retrieve human-curated cases \citep{aamodt1994casebased}. More recent approaches substitute human feedback and curated instruction data for hand-crafted rules \citep{ouyang2022training, wang2023selfinstruct}, but the constraint is unchanged: the knowledge a system can acquire remains bounded by human-authored content \citep{gan2025reversebottleneck}.
+
+This raises a harder question: what would it mean for an agent to generate knowledge without access to any human-created data? Consider an agent placed in a raw environment, receiving only sensory input, with no labels, no language supervision, and no human prior \citep{lecun2022path}. If such an agent can learn to predict its world accurately, what form does that knowledge take?
+
+We propose that the answer lies in a redefinition of knowledge itself. Knowledge is any representation that maps an agent's observation and action to a predicted next observation, regardless of its form. Storing every observed (observation, action, next-observation) tuple exactly as seen is knowledge; so is a compact dynamical equation.
+
+What distinguishes them is compression (Figure~\ref{fig:compression-spectrum}). Between these extremes lie the familiar representations of knowledge-based AI systems --- case libraries, prototypes, learned heuristics, abstract rules --- each corresponding to a different point on a continuous compression spectrum \citep{tishby1999information}. This reframing has a normative implication: compression pressure, applied to raw experience, is the mechanism through which an agent moves from memorization toward generalization \citep{shwartz2017opening}. More compression, all else equal, produces more abstract and more transferable knowledge.
+
+\begin{figure*}[t]
+    \centering
+    \includesvg[width=0.95\textwidth]{figures/compression_spectrum}
+    \caption{The compression spectrum. Knowledge representations vary continuously from verbatim memorization (a lookup table over every observed instance) to a compressed rule (a closed-form law that describes the underlying manifold). Classical knowledge-based AI representations --- case libraries, prototypes, learned heuristics, abstract rules --- occupy intermediate points. Compression pressure, applied to raw experience, drives a learner from left to right.}
+    \label{fig:compression-spectrum}
+\end{figure*}
+
+We test this thesis in a controlled setting. We construct a synthetic physics environment --- a simulated pendulum with five physical parameters --- in which we record the true generative variables (pendulum length, initial angle, gravity, damping, angular velocity, and camera pose) at every frame. The agent itself receives only raw pixel observations together with its own action, with no labels; from its perspective the task is purely unsupervised. Recording the generative variables on the experimenter side, while keeping them invisible to the agent, lets us linearly probe the bottleneck after training to ask which physical quantities the model has actually encoded.
+
+We train encoder-bottleneck-decoder world models \citep{ha2018world}, sweeping the bottleneck width across seven values as a proxy for compression level, and use linear probes \citep{alain2016understanding} on the frozen latent to ask not just whether the model generalizes, but what it has actually encoded.
+
+The gross generalization signal behaves as the thesis predicts: smaller bottlenecks produce smaller training-to-OOD gaps --- the difference between in-distribution training accuracy and out-of-distribution test accuracy. But probing the latent reveals that this apparent generalization is not physics. Models at small bottleneck widths encode camera pose and quietly abandon the physical prediction task. We trace this to a task design failure: single-step next-frame prediction does not require physics knowledge, so the compression pressure never falls on the physical variables. This is not a refutation of the compression thesis, but it sharpens what the thesis requires of the task.
+
+Our contributions are: (i) a reframing of the knowledge-based AI taxonomy as a continuous compression spectrum, motivating unsupervised learning as the natural route to knowledge not bounded by human-authored data; (ii) a controlled synthetic-physics testbed designed to measure whether a model has encoded ground-truth physical structure, not merely whether it predicts well; and (iii) an analysis of where the current experimental design falls short and what a better test would require.
+
+% ============ 2. RELATED WORK ============
+\section{Related Work}
+
+\paragraph{Knowledge limitations of data-bounded systems.}
+Prior work has argued that the knowledge ceiling of language systems is structural: \citet{bender2020climbing} demonstrate through an octopus thought experiment that a learner processing only linguistic form --- statistical patterns in text --- cannot acquire meaning grounded in real-world experience, and this limitation persists regardless of model size \citep{bender2021stochastic}. This motivates exploring paradigms where knowledge emerges from \emph{direct interaction} with an environment rather than from human-authored text. Concretely, by direct interaction we mean that the model receives a raw observation $S_t$ together with an action $A_t$ that an embodied agent is taking, and must predict the next observation $S_{t+1}$ --- so its loss depends on the world's response to the action, not on the statistics of static images alone.
+
+\paragraph{Compression as a theory of generalization.}
+The information bottleneck framework \citep{tishby1999information} formalizes learning as trading off compression against prediction: a good representation compresses the input while retaining maximal information about the target. \citet{shwartz2017opening} observed that, during training, deep networks first enter a phase that fits the training data and then enter a second phase in which the hidden layers progressively discard input details that are not predictive of the target; it is this discarding phase, not the initial fitting phase, that correlates with improved generalization to held-out data. The grokking phenomenon \citep{power2022grokking} provides a striking instantiation: long after the training loss on a small algorithmic task has plateaued at near-zero, the test loss suddenly drops from chance to near-zero, and the learned weights at that moment exhibit a markedly simpler structure than during the memorization phase --- consistent with the network having finally compressed the training set into the underlying rule rather than continuing to store the individual examples. In computational neuroscience, sparse coding offers a biological counterpart: the visual cortex represents inputs using as few simultaneously-active neurons as possible \citep{olshausen2004sparse}, a built-in pressure to compress sensory input. Together these results suggest that compression is not a deep-learning artifact but a cross-domain principle of efficient representation.
+
+\paragraph{Physics discovery from pixels and world models.}
+The most direct precedent for our work is \citet{iten2020discovering}, who trained a bottlenecked autoencoder on toy physical systems --- low-dimensional state vectors --- and showed that physically meaningful variables are linearly recoverable from the latent. Most prior compression and grokking studies live in this regime: small algorithmic tasks (e.g., modular arithmetic) or low-dimensional inputs. We move the question into an interactive 3D setting: an agent observes a pendulum scene from a movable camera, issues 2D ego-motion actions, and must predict the resulting next frame. Within this setting we sweep the bottleneck across seven widths and probe what is actually encoded, finding that small bottlenecks learn a visual shortcut on camera pose rather than physics. Our encoder--bottleneck--decoder framing follows the world-model tradition of learning compact latent dynamics from raw pixels \citep{ha2018world, hafner2023dreamer}. Synthetic 3D environments \citep{juliani2018unity} have a long track record of letting researchers fabricate objects and physical rules that do not exist in reality, giving full control over the data-generating process; our setup follows that tradition.
+
+% ============ 3. METHOD ============
+\section{Method}
+
+\subsection{Synthetic Pendulum Testbed}
+\label{sec:testbed}
+
+We render a simple pendulum in a Unity 3D environment as $64\times64$ RGB frames \citep{juliani2018unity}. Each episode independently samples five physical parameters: pendulum length $\in [0.5, 2.0]$\,m, initial angle $\in [15^\circ, 85^\circ]$, gravity $\in [4.0, 14.0]$\,m/s$^2$, angular damping $\in [0.01, 0.5]$, and initial angular velocity $\in [-3.0, 3.0]$\,rad/s. The agent receives a frame $S_t$ and a 2D camera ego-motion action $A_t = [\Delta\text{azimuth},\,\Delta\text{elevation}]$, and must predict the next frame $S_{t+1}$. The two angular deltas parameterize a sphere centered on the pendulum: the camera lives on the surface of this sphere and the action moves it tangentially, so $A_t$ is two-dimensional even though the underlying 3D scene is not.
+
+These five parameters fall into three tiers of single-frame observability by design. \textbf{Tier~A} (geometric): length and angle are directly readable from pixel geometry. \textbf{Tier~B} (color-coded): gravity and damping are invisible as dynamics in a single frame, but are encoded in the bob's color via $\mathrm{HSV}(\text{hue}=g_\text{norm},\ \text{sat}=d_\text{norm},\ \text{val}=1)$; the model can recover them if it learns the color-to-physics mapping. \textbf{Tier~C} (purely latent): initial angular velocity leaves no trace in any single frame and can only be inferred from temporal dynamics. This three-tier structure lets us ask not just whether the model generalizes, but \emph{what} it has encoded.
+
+\paragraph{OOD design.}
+To test physical extrapolation rather than interpolation, we partition each parameter dimension into Low, Mid, and High bands and hold out one band per dimension in a Latin-hypercube rotation, so no combination of held-out values appeared during training. We define $k$ as the number of dimensions an episode draws from their held-out bands, giving an exact by-construction split: \emph{IID} ($k{=}0$, 3{,}200 episodes), \emph{Near-OOD} ($k{\in}\{1,2\}$, 1{,}600 episodes), and \emph{Far-OOD} ($k{\in}\{3,4,5\}$, 1{,}200 episodes) across 6{,}000 episodes (${\sim}600$K frames). A model that memorizes training instances fails at $k\geq1$; one that has internalized the physical law should generalize at any $k$. Figure~\ref{fig:ood_split} shows a 2D slice of the parameter space.
+
+\begin{figure}[t]
+    \centering
+    \includesvg[width=0.95\columnwidth]{figures/s8_physics_scatter}
+    \caption{Train/test parameter regions. Training only sees a corner of the
+    physics space; Near-OOD perturbs a few dimensions, Far-OOD perturbs many.}
+    \label{fig:ood_split}
+\end{figure}
+
+\subsection{Models and the Bottleneck Dial}
+\label{sec:dial}
+
+All three models share the same skeleton: $z_t = \mathrm{Encoder}(S_t)$, $z_{t+1} = \mathrm{Dynamics}([z_t, A_t])$, $\hat{S}_{t+1} = \mathrm{Decoder}(z_{t+1})$. The bottleneck width $\dim(z_t)$ is the experimental dial, swept over $\{2, 4, 8, 16, 32, 64, 128\}$.
+
+\paragraph{ConvNet.} A 4-layer stride-2 convolutional encoder produces a $4{\times}4{\times}256$ spatial feature map, linearly projected to the bottleneck; a mirrored ConvTranspose decoder reconstructs the next frame. We use four layers as a deliberate middle ground: shallow enough to retain a strong spatial inductive bias --- analogous to the dense, unstructured connectivity of early biological neural development that is progressively pruned into hierarchical structure through experience \citep{lopez2024toward} --- yet deep enough to learn non-trivial features. Translation equivariance means spatial structure is absorbed by the architecture and need not consume bottleneck capacity.
+
+\paragraph{ViT.} A 4-layer Vision Transformer (embedding dim 128) produces a CLS token, linearly projected to the bottleneck; a 2-layer ViT decoder reconstructs the next frame \citep{he2022masked}. We deliberately keep the encoder small enough that a sweep across seven bottleneck widths $\times$ two seeds is tractable on a single A10, while still leaving its per-image capacity comfortably above what is needed to reconstruct a $64{\times}64$ pendulum scene. The decoder is intentionally smaller than the encoder so that the encoder--bottleneck pair --- not the decoder --- carries the representational load. Unlike the ConvNet, the ViT has no spatial inductive bias: image organization and physics must compete for the same bottleneck slots, imposing a \emph{structure tax}. The two architectures are otherwise matched in training recipe, making inductive bias the sole architectural variable.
+
+\paragraph{DCT baseline.} The Discrete Cosine Transform (DCT) is a fixed image transform that rewrites a frame as a sum of cosine waves at different spatial frequencies --- the same transform that sits inside JPEG compression. Unlike a neural encoder, it has no learnable parameters: it does not adapt to the data, it simply re-expresses pixels in a frequency basis where keeping only the lowest-frequency coefficients yields a smaller, blurrier reconstruction.
+
+We use the DCT as a non-learning control. The ConvNet/ViT encoder and decoder are replaced by fixed 2D DCT bases (orthonormal, applied per channel); only the dynamics MLP between them is trainable. The bottleneck width becomes the number of low-frequency coefficients kept in zigzag order, swept over the same seven values $\{2, 4, 8, 16, 32, 64, 128\}$. Because the DCT cannot adapt to the training distribution, this control isolates whether the compression spectrum we observe requires a \emph{learned} encoder, or whether bottleneck width alone is enough.
+
+Figure~\ref{fig:arch} summarizes the three-model design.
+
+\begin{figure*}[t]
+    \centering
+    \includesvg[width=0.95\textwidth]{figures/s8b_model_diagram}
+    \caption{Architecture and the bottleneck sweep. The same encoder--bottleneck--decoder
+    recipe is run with seven bottleneck widths for ConvNet, ViT, and DCT baseline.}
+    \label{fig:arch}
+\end{figure*}
+
+\subsection{Evaluation}
+\label{sec:eval}
+
+\paragraph{Generalization gap.}
+We summarize the gross generalization signal with the Generalization Gap Ratio:
+\[
+\mathrm{GGR} \;=\; \frac{\mathrm{MSE}_{\mathrm{Far\text{-}OOD}} - \mathrm{MSE}_{\mathrm{IID}}}{\mathrm{MSE}_{\mathrm{IID}}}.
+\]
+$\mathrm{GGR}\approx0$ means the model predicts equally well on training and unseen physics; high $\mathrm{GGR}$ means it has fit the training distribution and broken on novelty.
+
+\paragraph{Linear probes.}
+GGR measures how well a model predicts but not what it has encoded. We freeze the trained encoder, extract $z_t$ on a held-out set, and fit Ridge regressions $z_t \to v$ for each ground-truth variable $v$, reporting $R^2$ \citep{alain2016understanding}. Probes follow the same three tiers as the environment: \textbf{Tier~A} (length, angle), \textbf{Tier~B} (gravity, damping), \textbf{Tier~C} (angular velocity, camera azimuth, camera elevation). $R^2\approx1$ means the variable is linearly recoverable from the bottleneck; $R^2\approx0$ means it is absent or non-linearly entangled.
+
+% ============ 4. RESULTS ============
+\section{Results}
+
+\subsection{Generalization Gap vs.\ Bottleneck Size}
+\label{sec:money}
+
+Figure~\ref{fig:money} plots GGR against bottleneck width. The curves of the two learned encoders behave the way the compression-spectrum hypothesis predicts at face value: small bottlenecks have a smaller training-to-far-OOD gap, large bottlenecks a larger one. For the ConvNet, GGR rises from 3.6\% at $\dim=2$ to 25.5\% at $\dim=32$ and plateaus. The ViT shows the same monotone trend, systematically lower at every width: 0.3\% at $\dim=2$ vs.\ 3.6\% for the ConvNet, 6.6\% at $\dim=8$ vs.\ 11.1\%, 14.0\% at $\dim=128$ vs.\ 24.5\%. The DCT baseline (gray, dashed) is flat near zero at every width; we return to it in Section~\ref{sec:dct}.
+\begin{figure}[t]
+    \centering
+    \includesvg[width=0.95\columnwidth]{figures/s9_money_plot}
+    \caption{Generalization gap rises with bottleneck size for the learned
+    encoders. Smaller bottleneck, smaller gap --- the spectrum is real, at least
+    on the surface.}
+    \label{fig:money}
+\end{figure}
+
+If we stopped here, we would conclude that compression buys generalization and call it a confirmation. But the curve only tells us that small-bottleneck models have a small IID-to-OOD gap; it does not tell us \emph{why}.
+
+\subsection{What Did the Model Actually Learn?}
+\label{sec:probe}
+
+A small gap is consistent with two very different stories: the model has learned compact physics rules that survive the IID-to-OOD shift, or the model is failing uniformly on every condition --- equally bad on training and test --- and the gap is small only because both numbers are bad. To distinguish these, we freeze the trained encoders and fit linear probes on their bottlenecks (Figure~\ref{fig:dual}).
+
+Two results dominate the ConvNet panel. First, camera elevation achieves $R^2 \approx 1.0$ at every bottleneck width, including $\dim{=}2$. Second, all physical variables are essentially absent ($R^2 \approx 0$) for $\dim \le 16$; at $\dim{=}32$, gravity jumps from $R^2{=}0.01$ to $R^2{=}0.72$ --- a sharp phase transition --- and damping begins to be recovered at $\dim \ge 64$. Length, angle, and angular velocity remain weakly encoded at all widths.
+
+These results indicate that the small-bottleneck model's low GGR does not reflect compressed physics rules. Under small bottlenecks, the model allocates its entire capacity to the most visually salient nuisance variable --- camera elevation --- and fails on the physical prediction task. IID and far-OOD predictions are similar because both are equally poor on dynamics-dependent variables. Physical structure does not enter the bottleneck until sufficient capacity remains after camera pose has been accounted for.
+
+\subsection{Same Rule, Different Price}
+\label{sec:tax}
+
+The ViT panel of Figure~\ref{fig:dual} shows the same qualitative pattern --- camera elevation always encoded, physics absent at small widths --- but with the gravity phase transition shifted. Gravity does not appear in the ViT until $\dim = 128$ ($R^2 = 0.65$). The same rule that fits in a 32-dimensional ConvNet bottleneck does not fit in a ViT bottleneck of less than 128 dimensions: four times the capacity for the same content.
+
+\begin{figure*}[t]
+    \centering
+    \includesvg[width=0.95\textwidth]{figures/s10b_dual_heatmap}
+    \caption{ConvNet (left) vs.\ ViT (right) probe heatmaps. Gravity emerges at
+    $\dim=32$ for ConvNet but only at $\dim=128$ for ViT --- a $4\times$
+    capacity gap for the same physical rule.}
+    \label{fig:dual}
+\end{figure*}
+
+\subsection{DCT Baseline: Compression Level vs.\ Compression Mechanism}
+\label{sec:dct}
+
+The phase transition reported above could in principle be a property of the bottleneck \emph{width} alone --- any compressor at the right width might surface physics --- or a property of the bottleneck being \emph{learned}. The DCT baseline isolates these two factors: its encoder has no parameters and cannot adapt to the training distribution, so any spectrum that depends on adaptation will collapse, while any spectrum that depends only on width will persist.
+
+Across all seven widths the DCT baseline's GGR is essentially zero (range $-1.3\%$ to $+0.3\%$), in contrast to up to $25.5\%$ for the ConvNet and $14.0\%$ for the ViT. Absolute reconstruction MSE is uniformly higher --- at $\dim=128$, DCT IID MSE is roughly $7.5{\times}$ the ConvNet's --- because the global cosine basis is not optimised for pendulum scenes. The interpretation is direct: a fixed encoder cannot fit the training distribution more tightly than the test distribution, because it does not fit anything. The IID-to-OOD gap observed in the learned models therefore requires an encoder that adapts to the data; bottleneck width on its own does not produce it. The compression spectrum is a property of \emph{learned} compression.
+
+The linear probe (Figure~\ref{fig:dct_probe}) makes a sharper point. The DCT bottleneck recovers gravity already at $\dim=4$ ($R^2=0.27$) and saturates near $R^2{\approx}0.73$ from $\dim=32$ onward. The contrast with the learned encoders is starkest at $\dim=8$: DCT $R^2=0.62$ versus ConvNet $R^2=0.00$ and ViT $R^2=0.001$. This is not a discovery of physics by the DCT: gravity is encoded in the bob's color, which is a globally low-frequency image feature, and the DCT basis preserves low-frequency content by construction. What the result establishes is a counterfactual --- an eight-dimensional bottleneck has the capacity to carry gravity. The learned encoders, given the same eight dimensions, choose not to. Their failure to encode gravity at small widths is therefore one of allocation rather than capacity: the next-frame prediction task pays for camera elevation, not for physics, so compression pressure flows to the cheaper variable.
+
+\begin{figure}[t]
+    \centering
+    \includesvg[width=0.95\columnwidth]{figures/s11_dct_heatmap}
+    \caption{DCT probe heatmap: linear-probe $R^2$ from the fixed DCT
+    bottleneck to each ground-truth variable, across the seven widths.}
+    \label{fig:dct_probe}
+\end{figure}
+
+% ============ 5. DISCUSSION ============
+\section{Discussion}
+
+The experimental results suggest three distinct regimes of bottleneck pressure. \emph{Too tight}: the bottleneck is so narrow that the model cannot afford physics; it allocates its entire budget to the cheapest visual cue (camera elevation) and fails on the physical task. Under this regime, the IID-to-OOD gap appears small because performance is uniformly poor, not because the model learned a rule. \emph{Too loose}: the bottleneck is wide enough to fit the training distribution, and the gap increases substantially outside it. \emph{Just right}: the bottleneck is narrow enough to prefer compact physics representations yet wide enough to cover structural overhead.
+
+\paragraph{Task design is the binding constraint.}
+Single-step next-frame prediction does not require physics knowledge. Camera elevation alone predicts the next camera position, which is sufficient to minimize reconstruction loss without encoding gravity or damping. Compression pressure was applied, but it fell on the wrong variable. To direct pressure toward physics, the task must not admit visual shortcuts: multi-step trajectory prediction \citep{hafner2023dreamer}, reasoning about falling objects and collisions \citep{riochet2018intphys}, counterfactual prediction under hypothetical physics changes, or tasks drawn from infant physical-intuition research \citep{spelke2007core}. These findings do not refute the compression-as-intelligence thesis; they indicate that compression pressure must be directed at the right target variable.
+
+\paragraph{Limitations.}
+Our claims are bounded by a single rendered domain (a pendulum), a small set of physical variables, and linear probes. Non-linear probes might recover structure that linear probes miss, possibly shifting the phase-transition locations. The OOD construction holds out parameter bands rather than entire regimes of physics, so ``far-OOD'' here is still in-domain. Initial angular velocity, invisible from a single frame, is never recovered by any model; whether it would emerge with temporal context is open.
+
+\paragraph{Connection to knowledge-based AI.}
+The spectrum view connects our results to classical knowledge-based AI. Case libraries, prototypes, and abstract rules are usually treated as competing paradigms; we see them as different points on the same compression curve. At the loose end of our sweep, the model behaves like a case library --- it effectively stores individual training episodes and retrieves the closest match for new inputs, with no compaction into a generalisation. At the phase-transition regime, the model behaves like a prototype --- many distinct training instances collapse onto a single latent direction that aligns with gravity, the way a category prototype abstracts over individual instances. The third regime --- a closed-form rule, like a pendulum equation of motion --- is what we would ultimately want, but our experiments do not reach it.
+
+The lesson is that compression pressure on its own does not produce abstract rules. The model takes whatever shortcut is cheapest under its architecture, and in our setup that shortcut is camera elevation. Producing rule-like representations requires both enough capacity to encode the rule and an architecture that makes the rule cheaper to encode than any available shortcut.
+
+% ============ 6. CONCLUSION ============
+\section{Conclusion}
+
+The knowledge ceiling of data-bounded systems makes unsupervised learning from raw experience a necessary next step. We have shown that the compression mechanism is real: varying bottleneck width produces a measurable generalization spectrum, and the spectrum requires learned compression to exist. But compression pressure alone does not point toward physics --- at small bottlenecks, models encode the cheapest available visual cue and uniformly abandon the physical task. The compression-as-intelligence thesis is not refuted, but sharpened: rules emerge from compression only when the pressure falls on the right target, through an architecture whose inductive bias makes that target cheaper to encode than any available shortcut.
+
+% ============ END-OF-PAPER STATEMENTS (REQUIRED) ============
+\section{Statement on Use of Generative AI}
+
+This project was built with Claude Code (Anthropic). Claude appears as a co-author in our GitHub commit history. The AI contributed to: writing code (training pipeline, model architectures, probe analysis, evaluation scripts), generating the SVG figures, searching the literature for related work, suggesting experimental directions, tracking experimental progress, and drafting auxiliary documentation. All core decisions --- the research question, the experimental design, the choice of architectures and ablations, the framing of the hypothesis, and the interpretation of results --- were made by us. The AI executed and proposed within the scope we set; every output was accepted, rejected, or revised by us before it entered the paper.
+
+For this paper specifically, Claude Code set up the AAAI LaTeX environment and formatting. The writing process itself was iterative. The AI prompted us with questions of the form ``if you had to summarize this experiment in one sentence, what would it be?'' and ``what is the core information you want a reader to take away?'' We answered those questions ourselves in plain prose, and we assembled our own answers into a first-pass draft \emph{without AI involvement at that stage}. Only after that initial draft existed did we ask the AI to polish each paragraph for grammar and flag weak points in the logic. Every paragraph in this paper has been reviewed by us; we have verified all numerical results, figure references, and citations against our own logs and source files.
+
+% ============ BIBLIOGRAPHY ============
+% Bibliography entries are in references.bib.
+% Citation keys currently used: olshausen2004sparse, power2022grokking,
+% iten2020discovering, ellis2023dreamcoder, minegishi2026emergent,
+% he2022masked, lopez2024toward, bear2023unifying.
+\bibliography{references}
+
+\end{document}
